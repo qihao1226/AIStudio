@@ -1,0 +1,90 @@
+{
+  "project_dir": "/home/antigravity/qihao1226/AIStudio/projects/20261107_jensen_power",
+  "user_assets": [
+    {
+      "path": "/home/antigravity/qihao1226/AIStudio/projects/20261107_jensen_power/01_raw_assets/user_assets/jensen_clip_06_power.mp4",
+      "filename": "jensen_clip_06_power.mp4",
+      "size_bytes": 4003138,
+      "extension": ".mp4",
+      "category": "video",
+      "duration_seconds": 30.005,
+      "bit_rate": 1067325,
+      "width": 1920,
+      "height": 1080,
+      "codec": "h264"
+    },
+    {
+      "path": "/home/antigravity/qihao1226/AIStudio/projects/20261107_jensen_power/01_raw_assets/user_assets/jensen_clip_07_colossus.mp4",
+      "filename": "jensen_clip_07_colossus.mp4",
+      "size_bytes": 4175679,
+      "extension": ".mp4",
+      "category": "video",
+      "duration_seconds": 30.03,
+      "bit_rate": 1112401,
+      "width": 1920,
+      "height": 1080,
+      "codec": "h264"
+    },
+    {
+      "path": "/home/antigravity/qihao1226/AIStudio/projects/20261107_jensen_power/01_raw_assets/user_assets/jensen_clip_12_tentrillion.mp4",
+      "filename": "jensen_clip_12_tentrillion.mp4",
+      "size_bytes": 6035636,
+      "extension": ".mp4",
+      "category": "video",
+      "duration_seconds": 30.009,
+      "bit_rate": 1609020,
+      "width": 1920,
+      "height": 1080,
+      "codec": "h264"
+    },
+    {
+      "path": "/home/antigravity/qihao1226/AIStudio/projects/20261107_jensen_power/01_raw_assets/user_assets/pjm_grid_report.png",
+      "filename": "pjm_grid_report.png",
+      "size_bytes": 229487,
+      "extension": ".png",
+      "category": "image",
+      "duration_seconds": 0.0,
+      "bit_rate": 0,
+      "width": 1920,
+      "height": 1080,
+      "codec": "png"
+    },
+    {
+      "path": "/home/antigravity/qihao1226/AIStudio/projects/20261107_jensen_power/01_raw_assets/user_assets/threemile_island.png",
+      "filename": "threemile_island.png",
+      "size_bytes": 1930134,
+      "extension": ".png",
+      "category": "image",
+      "duration_seconds": 0.0,
+      "bit_rate": 0,
+      "width": 1920,
+      "height": 1080,
+      "codec": "png"
+    },
+    {
+      "path": "/home/antigravity/qihao1226/AIStudio/projects/20261107_jensen_power/01_raw_assets/user_assets/blackwell_nvl72.jpg",
+      "filename": "blackwell_nvl72.jpg",
+      "size_bytes": 48152,
+      "extension": ".jpg",
+      "category": "image",
+      "duration_seconds": 0.04,
+      "bit_rate": 9630400,
+      "width": 1200,
+      "height": 630,
+      "codec": "mjpeg"
+    },
+    {
+      "path": "/home/antigravity/qihao1226/AIStudio/projects/20261107_jensen_power/01_raw_assets/user_assets/bgm_cinematic.mp3",
+      "filename": "bgm_cinematic.mp3",
+      "size_bytes": 1729768,
+      "extension": ".mp3",
+      "category": "audio",
+      "duration_seconds": 72.045714,
+      "bit_rate": 192074,
+      "sample_rate": "44100",
+      "channels": 2
+    }
+  ],
+  "web_assets": [],
+  "total_files": 7
+}

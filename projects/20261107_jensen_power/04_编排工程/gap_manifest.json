@@ -1,0 +1,113 @@
+{
+  "project_id": "20261107_jensen_power",
+  "project_title": "算力终局是电力：黄仁勋披露的十万亿暗战",
+  "global_style_preset": {
+    "image_style": "cinematic lighting, modern clean tech blueprint, high contrast, 8k resolution, minimalist, dark futuristic aesthetic",
+    "video_style": "cinematic smooth, photorealistic",
+    "tts_voice_reference": null
+  },
+  "tasks": [
+    {
+      "task_id": "voice_01",
+      "type": "tts_narration",
+      "model": "f5-tts",
+      "params": {
+        "text": "所有人都在为英伟达的芯片疯狂，但很少有人听懂黄仁勋这句警告。",
+        "ref_audio": null,
+        "speed": 1.05
+      },
+      "output_path": "02_generated/voices/shot_001_intro.wav"
+    },
+    {
+      "task_id": "voice_02",
+      "type": "tts_narration",
+      "model": "f5-tts",
+      "params": {
+        "text": "算力暴涨的尽头，根本不是芯片良率，而是我们脚下的电网正在彻底崩溃！",
+        "ref_audio": null,
+        "speed": 1.05
+      },
+      "output_path": "02_generated/voices/shot_002_grid.wav"
+    },
+    {
+      "task_id": "voice_03",
+      "type": "tts_narration",
+      "model": "f5-tts",
+      "params": {
+        "text": "微软甚至重新启用了封存四十年的三里岛核反应堆！单个万卡机房，吃掉的就是一座中型城市的全部电力。",
+        "ref_audio": null,
+        "speed": 1.05
+      },
+      "output_path": "02_generated/voices/shot_003_nuclear.wav"
+    },
+    {
+      "task_id": "voice_04",
+      "type": "tts_narration",
+      "model": "f5-tts",
+      "params": {
+        "text": "下一代万亿大模型，需要的是吉瓦级独立能源基座。谁掌握了独占清洁电力，谁就垄断了下一代算力。",
+        "ref_audio": null,
+        "speed": 1.05
+      },
+      "output_path": "02_generated/voices/shot_004_gigawatt.wav"
+    },
+    {
+      "task_id": "voice_05",
+      "type": "tts_narration",
+      "model": "f5-tts",
+      "params": {
+        "text": "这不是简单的芯片竞争，而是一场人类工业文明能源与智能的世纪大迁徙。",
+        "ref_audio": null,
+        "speed": 1.05
+      },
+      "output_path": "02_generated/voices/shot_005_migration.wav"
+    },
+    {
+      "task_id": "voice_06",
+      "type": "tts_narration",
+      "model": "f5-tts",
+      "params": {
+        "text": "十万亿英伟达的真正底牌，从来不是硅片，而是点亮未来的能源阀门。点击关注，带你看穿AI底层商业真相。",
+        "ref_audio": null,
+        "speed": 1.05
+      },
+      "output_path": "02_generated/voices/shot_006_conclusion.wav"
+    },
+    {
+      "task_id": "img_04_nuclear_datacenter",
+      "type": "text_to_image",
+      "model": "flux-schnell",
+      "params": {
+        "prompt": "futuristic nuclear power plant powering massive glowing AI data center at night, glowing blue coolant pipelines, dark aesthetic, cinematic photorealistic 8k, isometric angle",
+        "aspect_ratio": "9:16",
+        "steps": 4,
+        "seed": 1024
+      },
+      "output_path": "02_generated/images/shot_004_nuclear_datacenter.png"
+    },
+    {
+      "task_id": "img_05_substation_ai",
+      "type": "text_to_image",
+      "model": "flux-schnell",
+      "params": {
+        "prompt": "gigantic electrical grid transmission substation glowing with electric arcs and holographic neural network connections, epic scale, dark futuristic atmosphere, 8k",
+        "aspect_ratio": "9:16",
+        "steps": 4,
+        "seed": 2048
+      },
+      "output_path": "02_generated/images/shot_005_substation_ai.png"
+    },
+    {
+      "task_id": "img_official_cover",
+      "type": "text_to_image",
+      "model": "flux-schnell",
+      "params": {
+        "prompt": "Jensen Huang silhouette looking at massive holographic power grid curve and glowing AI server racks, cinematic lighting, 8k, dramatic poster style",
+        "aspect_ratio": "9:16",
+        "steps": 4,
+        "seed": 4096
+      },
+      "output_path": "02_generated/images/official_cover_9x16.png"
+    }
+  ]
+}
