@@ -5,7 +5,12 @@ from pathlib import Path
 
 # Base Paths
 DEFAULT_PROJECTS_DIR = Path("/home/antigravity/qihao1226/AIStudio/projects")
-GOOGLE_DRIVE_BASE_DIR = Path("/content/drive/MyDrive/AIStudio/projects")
+
+# Google Drive Content Production Unified Architecture (ID: 1FHApfkCr9Xq76E4gTAVR5i3weVsRTmJc)
+GOOGLE_DRIVE_CONTENT_ROOT_ID = "1FHApfkCr9Xq76E4gTAVR5i3weVsRTmJc"
+GOOGLE_DRIVE_SOP04_DIR_ID = "19hiobDoFGopYu_4tgMjj-GX_DiiYzwFs"
+GOOGLE_DRIVE_BASE_DIR = Path("/content/drive/MyDrive/YOUAI/内容生产/04_全源素材重构")
+GOOGLE_DRIVE_FALLBACK_DIR = Path("/content/drive/MyDrive/内容生产/04_全源素材重构")
 
 # Project Directory Standard Structure (AG_SOP_04 Specification)
 PROJECT_SUBDIRS = [

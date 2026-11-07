@@ -7,10 +7,10 @@
 > **外挂算力车间**：Google Colab (Colab Pro / 200 CCU 权益池，T4 / A100 GPU)  
 > **主力动效引擎**：`HyperFrames` + `Remotion` + `FFmpeg/MoviePy` (Stage25D / React / GSAP / CLI)  
 > **AIGC 生产矩阵**：`F5-TTS / CosyVoice` (声音克隆/旁白) + `FLUX.1 / SDXL` (插图/封面) + `CogVideoX / LTX-Video` (动态空镜) + `faster-whisper / SenseVoice` (字级对齐/爆点提取)  
-> **资产总装中枢**：Google Drive (统一物理货架：`raw` / `gap_tasks` / `generated` / `assets_hub`)  
-> **SOP 沉淀路径**：Google Drive `1YJqjW_FDdyY0iZsFeOSr1x_RK-F1_FFd/AG_SOP_04_全源素材重构与外挂多模态视频/`  
-> **成片交付路径**：Google Drive `1FHApfkCr9Xq76E4gTAVR5i3weVsRTmJc/04_全源素材重构/`  
-> **核心哲学**：**全源素材汇流，差额按需制造，网盘集中总装，代码全轨动效编排。**
+> **全流程统一归属路径**：Google Drive 核心中枢「内容生产」 (ID: `1FHApfkCr9Xq76E4gTAVR5i3weVsRTmJc` / 子目录: `04_全源素材重构/`)  
+> **SOP 规范沉淀路径**：Google Drive `1YJqjW_FDdyY0iZsFeOSr1x_RK-F1_FFd/AG_SOP_04_全源素材重构与外挂多模态视频生产流水线 SOP v1.0/`  
+> **统一自包含规约**：所有项目立项、素材中转、Colab 算力交互、质检门禁及最终成片交付，**100% 自包含于 `内容生产/04_全源素材重构/{项目名}/` 内部**，严禁在网盘根目录产生离散临时文件夹。  
+> **核心哲学**：**全源素材汇流，差额按需制造，集中自包含货架，代码全轨动效编排。**
 
 ---
 
@@ -185,49 +185,48 @@ flowchart TD
 
 ---
 
-## 五、Google Drive 统一中枢目录契约与交付规范
+## 五、Google Drive 统一中枢目录契约与自包含交付规范
 
-在 Google Drive 中，每个 `AG_SOP_04` 生产项目均严格遵循如下标准化树状目录树：
+为彻底杜绝资产散落在网盘根目录，所有 `AG_SOP_04` 生产项目**强制统一归属于核心中枢「内容生产」**：
+* **核心中枢根目录**：`Google Drive / YOUAI / 内容生产 /` (ID: `1FHApfkCr9Xq76E4gTAVR5i3weVsRTmJc`)
+* **产线专属流水线**：`内容生产 / 04_全源素材重构 /` (ID: `19hiobDoFGopYu_4tgMjj-GX_DiiYzwFs`)
+* **单项目自包含完整规范**（严格对齐 `AG_SOP_01` 工业标准）：
 
-### 1. 生产工程工作区结构 (`Drive/AIStudio/projects/{PROJECT_ID}/`)
 ```text
-{PROJECT_ID}/
+Google Drive: 1FHApfkCr9Xq76E4gTAVR5i3weVsRTmJc/04_全源素材重构/{YYYYMMDD}_{标题}_v1/
 ├── 00_立项与策划/
-│   ├── project_brief.json             # 选题、规格、风格基调
+│   ├── project_brief.json             # 选题立项、画幅规格、风格基调
 │   └── 原始需求.md
-├── 01_raw_assets/                     # 双源原始素材库
-│   ├── user_assets/                   # 用户上传素材 (录音/课件/视频)
-│   └── web_assets/                    # Antigravity 全网嗅探下载素材
-├── 02_generated/                      # Colab 外挂车间产出物
+├── 01_素材/                           # 双源原始素材库 (全量原件留痕)
+│   ├── user_assets/                   # 用户上传素材 (原片、原声、财报PDF、课件图片)
+│   └── web_assets/                    # Antigravity 全网嗅探物证
+├── 02_generated/                      # Colab 外挂车间按需产出物 (旁白、FLUX插图、视频空镜)
 │   ├── voices/                        # F5-TTS 生成的旁白分段 wav
-│   ├── images/                        # FLUX 生成的定制插图
-│   └── video_clips/                   # CogVideoX 生成的动态空镜
-├── 03_assets_hub/                     # 集中总装货架 (100% 齐套规范命名)
+│   ├── images/                        # FLUX 生成的定制概念插图与海报
+│   ├── video_clips/                   # CogVideoX 生成的动态空镜
+│   └── manifest_completed.lock        # Colab 生产齐套完成锁
+├── 03_assets_hub/                     # 集中总装物理货架 (100% 齐套标准命名)
 │   ├── shot_001_raw_intro.mp4
 │   ├── shot_002_gen_flux_chip.png
 │   ├── shot_003_voice_cloned.wav
-│   └── bgm_cinematic.mp3
-└── 04_编排工程/
-    ├── director_board.md              # 7 列导演表
-    ├── gap_manifest.json              # 差额生产清单
-    ├── timeline.json                  # 绝对时间轴排布
-    └── src/                           # Hyperframes / Remotion 源码工程
+│   ├── bgm_cinematic.mp3
+│   └── assets_ready.lock              # 齐套断言锁
+├── 04_编排工程/                       # 导演表、差额清单与动效时间线
+│   ├── director_board.md              # 7 列工业化导演表
+│   ├── gap_manifest.json              # 差额生产清单
+│   └── timeline.json                  # 绝对时间轴排布
+├── 08_判据/                           # 工业门禁与质检全项合格单 (对齐 AG_SOP_01)
+│   ├── gatekeeper_report.json         # film_gatekeeper 终审合格单 (-16 LUFS / 1080P)
+│   ├── motion_check_report.json       # 镜头活跃度断言报告 (>=25%)
+│   └── stills/                        # 逐镜头高清关键帧截帧抽检图
+├── 交付成片/                          # 最终成品自包含交付
+│   ├── final_master_1080p.mp4         # 终审 1080p 高保真成片母带 (-16 LUFS)
+│   ├── preview_720p.mp4               # 720p 快速分发展示版 (可选)
+│   └── official_cover_9x16.png        # 9:16 官宣级竖版主视觉封面
+└── README.md                          # 全案自包含交付索引说明
 ```
 
-### 2. 最终成品交付结构 (`Drive/1FHApfkCr9Xq76E4gTAVR5i3weVsRTmJc/04_全源素材重构/{YYYYMMDD}_{标题}_v1/`)
-```text
-{YYYYMMDD}_{标题}_v1/
-├── 交付成片/
-│   ├── final_master_1080p.mp4         # 终审 1080p 高保真成片 (-16 LUFS)
-│   ├── preview_720p.mp4               # 720p 快速分发展示版
-│   └── 官方封面_16x9.jpg              # 精选视频封面
-├── 质检门禁报告/
-│   ├── gatekeeper_report.json         # film_gatekeeper 终审合格单
-│   ├── motion_check_report.json       # 镜头活跃度断言报告
-│   └── keyframe_strip.png             # 关键帧全局抽检长图
-└── 归档导演表/
-    └── 完整分镜与生产明细.md
-```
+> ⚠️ **严禁规则**：严禁在 Google Drive 根目录创建孤立工程目录，所有 Colab Worker 读写、Antigravity 调度中转，均在上述项目自包含目录内闭环完成。
 
 ---
 
