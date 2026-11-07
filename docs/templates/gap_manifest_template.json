@@ -1,0 +1,47 @@
+{
+  "project_id": "PROJECT_20261107_DEMO",
+  "project_title": "示例：通用全源素材重构项目",
+  "created_at": "2026-11-07T00:00:00Z",
+  "global_style_preset": {
+    "image_style": "cinematic lighting, modern clean tech blueprint, high contrast, 8k resolution, minimalist",
+    "video_style": "slow smooth cinematic camera movement, 4k, photorealistic",
+    "tts_voice_reference": "user_assets/speaker_sample_10s.mp3"
+  },
+  "tasks": [
+    {
+      "task_id": "task_voice_001",
+      "type": "tts_narration",
+      "model": "f5-tts",
+      "params": {
+        "text": "在过去的五年里，算力基础设施正在经历一场前所未有的范式重构。",
+        "ref_audio": "01_raw_assets/user_assets/speaker_sample_10s.mp3",
+        "speed": 1.0,
+        "emotion": "authoritative"
+      },
+      "output_path": "02_generated/voices/shot_001_narration.wav"
+    },
+    {
+      "task_id": "task_image_002",
+      "type": "text_to_image",
+      "model": "flux-schnell",
+      "params": {
+        "prompt": "futuristic AI data center with glowing fiber optic cables and high-performance server racks, isometric view",
+        "aspect_ratio": "16:9",
+        "steps": 4,
+        "seed": 42
+      },
+      "output_path": "02_generated/images/shot_002_datacenter.png"
+    },
+    {
+      "task_id": "task_video_003",
+      "type": "text_to_video",
+      "model": "cogvideox-2b",
+      "params": {
+        "prompt": "glowing digital brain pulsing with neural signals, camera rotating around smoothly",
+        "duration_seconds": 5,
+        "aspect_ratio": "16:9"
+      },
+      "output_path": "02_generated/video_clips/shot_003_neural_pulse.mp4"
+    }
+  ]
+}
