@@ -1,0 +1,18 @@
+{
+  "status": "ALL_GATES_PASSED",
+  "filename": "final_master_1080p.mp4",
+  "duration_seconds": 51.321,
+  "resolution": "1080x1920",
+  "aspect_ratio": "9:16",
+  "fps": 30.0,
+  "video_codec": "h264",
+  "audio_codec": "aac",
+  "file_size_mb": 21.64,
+  "bitrate_kbps": 3536.98,
+  "gates": {
+    "gate_a_asset_readiness": true,
+    "gate_b_motion_dynamic": true,
+    "gate_c_audio_ducking": true,
+    "gate_d_broadcast_specs": true
+  }
+}

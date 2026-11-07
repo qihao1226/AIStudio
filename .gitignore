@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# Large media binaries (stored in Drive)
+*.mp4
+*.wav
+*.mp3
+*.mov
+*.mkv
+projects/*/01_raw/
+projects/*/02_generated/
+projects/*/03_assets_hub/
+projects/*/out/*.mp4
+projects/*/out/*.txt
+
+# OS / Editor
+.DS_Store
+.idea/
+.vscode/
