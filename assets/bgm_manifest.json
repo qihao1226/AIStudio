@@ -1,12 +1,12 @@
 {
   "version": "1.0.0",
-  "updated_at": "2026-11-08T16:15:10Z",
+  "updated_at": "2026-11-08T16:26:25Z",
   "tracks": [
     {
-      "id": "BGM_01_TECH_PU_115",
+      "id": "BGM_01_TECH_PU_V1_115",
       "filename": "tech_neural_pulse_115bpm.wav",
       "category": "01_tech_pulse",
-      "title": "Tech Pulse Theme",
+      "title": "Tech Neural Pulse",
       "tags": [
         "AI",
         "未来感",
@@ -19,11 +19,12 @@
         "AG_SOP_04",
         "AG_SOP_01"
       ],
-      "duration_sec": 32.0,
-      "bpm": 100.0,
+      "duration_sec": 36.0,
+      "bpm": 115.0,
       "energy_level": 3,
       "climax_sec": [
-        16.0
+        10.08,
+        24.48
       ],
       "loopable": true,
       "loudness_lufs": -16.0,
@@ -31,10 +32,38 @@
       "prompt_dna": "futuristic modular synth pulse, warm analog moog bass, deep sub bass, tech documentary, clean electronic groove, modern AI keynote, 48kHz pristine studio recording, no vocals"
     },
     {
-      "id": "BGM_02_COMMERC_88",
+      "id": "BGM_01_TECH_PU_V2_124",
+      "filename": "tech_cyber_grid_124bpm.wav",
+      "category": "01_tech_pulse",
+      "title": "Tech Cyber Grid",
+      "tags": [
+        "赛博朋克",
+        "数据流",
+        "高速计算",
+        "极客动效",
+        "未来芯片"
+      ],
+      "sop_affinity": [
+        "AG_SOP_06",
+        "AG_SOP_04"
+      ],
+      "duration_sec": 36.0,
+      "bpm": 124.0,
+      "energy_level": 4,
+      "climax_sec": [
+        10.08,
+        24.48
+      ],
+      "loopable": true,
+      "loudness_lufs": -16.0,
+      "local_path": "/shared/user/.gemini/youai/assets/bgm/01_tech_pulse/tech_cyber_grid_124bpm.wav",
+      "prompt_dna": "cyberpunk modular arpeggio, driving 16th note sequencer bass, cybernetic clean data stream, futuristic laboratory, modern synthesizer ostinato, no vocals"
+    },
+    {
+      "id": "BGM_02_COMMERC_V1_88",
       "filename": "commercial_wallstreet_depth_88bpm.wav",
       "category": "02_commercial_depth",
-      "title": "Commercial Depth Theme",
+      "title": "Commercial Wall Street Depth",
       "tags": [
         "商业深度",
         "资本博弈",
@@ -46,11 +75,12 @@
         "AG_SOP_01",
         "AG_SOP_04"
       ],
-      "duration_sec": 32.0,
-      "bpm": 100.0,
+      "duration_sec": 36.0,
+      "bpm": 88.0,
       "energy_level": 2,
       "climax_sec": [
-        16.0
+        10.08,
+        24.48
       ],
       "loopable": true,
       "loudness_lufs": -16.0,
@@ -58,10 +88,39 @@
       "prompt_dna": "cinematic modern cello and piano, subtle minimalist tension, dark suspense strings, Wall Street finance documentary, prestigious corporate storytelling, premium acoustic production, no vocals"
     },
     {
-      "id": "BGM_03_KNOWLED_92",
+      "id": "BGM_02_COMMERC_V2_96",
+      "filename": "commercial_capital_summit_96bpm.wav",
+      "category": "02_commercial_depth",
+      "title": "Commercial Capital Summit",
+      "tags": [
+        "商业领袖",
+        "企业峰会",
+        "战略决断",
+        "高端纪实",
+        "财富故事"
+      ],
+      "sop_affinity": [
+        "AG_SOP_01",
+        "AG_SOP_04",
+        "AG_SOP_05"
+      ],
+      "duration_sec": 36.0,
+      "bpm": 96.0,
+      "energy_level": 3,
+      "climax_sec": [
+        10.08,
+        24.48
+      ],
+      "loopable": true,
+      "loudness_lufs": -16.0,
+      "local_path": "/shared/user/.gemini/youai/assets/bgm/02_commercial_depth/commercial_capital_summit_96bpm.wav",
+      "prompt_dna": "prestigious corporate chamber piano, noble warm acoustic strings, steady mechanical clock ticking tension, boardroom strategy, financial milestone narrative, no vocals"
+    },
+    {
+      "id": "BGM_03_KNOWLED_V1_92",
       "filename": "knowledge_flow_minimal_92bpm.wav",
       "category": "03_knowledge_flow",
-      "title": "Knowledge Flow Theme",
+      "title": "Knowledge Flow Minimal",
       "tags": [
         "知识白板",
         "心流干货",
@@ -73,11 +132,12 @@
         "AG_SOP_03",
         "AG_SOP_05"
       ],
-      "duration_sec": 32.0,
-      "bpm": 100.0,
+      "duration_sec": 36.0,
+      "bpm": 92.0,
       "energy_level": 1,
       "climax_sec": [
-        16.0
+        10.08,
+        24.48
       ],
       "loopable": true,
       "loudness_lufs": -16.0,
@@ -85,10 +145,38 @@
       "prompt_dna": "warm rhodes electric piano, gentle acoustic felt piano, lofi productivity ambient, soft vinyl texture, deep cognitive focus, smooth study beats, calm explainer background, no vocals"
     },
     {
-      "id": "BGM_04_KINETIC_128",
+      "id": "BGM_03_KNOWLED_V2_84",
+      "filename": "knowledge_focus_stream_84bpm.wav",
+      "category": "03_knowledge_flow",
+      "title": "Knowledge Focus Stream",
+      "tags": [
+        "认知升级",
+        "白板解说",
+        "深度学习",
+        "工具教程",
+        "平静专注"
+      ],
+      "sop_affinity": [
+        "AG_SOP_03",
+        "AG_SOP_05"
+      ],
+      "duration_sec": 36.0,
+      "bpm": 84.0,
+      "energy_level": 1,
+      "climax_sec": [
+        10.08,
+        24.48
+      ],
+      "loopable": true,
+      "loudness_lufs": -16.0,
+      "local_path": "/shared/user/.gemini/youai/assets/bgm/03_knowledge_flow/knowledge_focus_stream_84bpm.wav",
+      "prompt_dna": "warm acoustic marimba resonance, muted acoustic upright bass, soft rain tape ambient, clarity and cognitive ease, clean tutorial explainer, thoughtful learning space, no vocals"
+    },
+    {
+      "id": "BGM_04_KINETIC_V1_128",
       "filename": "kinetic_impact_stabs_128bpm.wav",
       "category": "04_kinetic_punch",
-      "title": "Kinetic Punch Theme",
+      "title": "Kinetic Impact Stabs",
       "tags": [
         "快闪大字",
         "反常识暴击",
@@ -100,11 +188,12 @@
         "AG_SOP_02",
         "AG_SOP_04"
       ],
-      "duration_sec": 32.0,
-      "bpm": 100.0,
+      "duration_sec": 36.0,
+      "bpm": 128.0,
       "energy_level": 5,
       "climax_sec": [
-        16.0
+        10.08,
+        24.48
       ],
       "loopable": true,
       "loudness_lufs": -16.0,
@@ -112,10 +201,38 @@
       "prompt_dna": "heavy hybrid kick stabs, tight rhythmic brass hits, aggressive bass pulse, intense hype beat, high energy trailer impact, punchy modern advertising groove, no vocals"
     },
     {
-      "id": "BGM_05_EPIC_BR_105",
+      "id": "BGM_04_KINETIC_V2_134",
+      "filename": "kinetic_phonk_strike_134bpm.wav",
+      "category": "04_kinetic_punch",
+      "title": "Kinetic Phonk Strike",
+      "tags": [
+        "爆款节奏",
+        "卡点神曲",
+        "多巴胺拉满",
+        "极限留存",
+        "极速反转"
+      ],
+      "sop_affinity": [
+        "AG_SOP_02",
+        "AG_SOP_04"
+      ],
+      "duration_sec": 36.0,
+      "bpm": 134.0,
+      "energy_level": 5,
+      "climax_sec": [
+        10.08,
+        24.48
+      ],
+      "loopable": true,
+      "loudness_lufs": -16.0,
+      "local_path": "/shared/user/.gemini/youai/assets/bgm/04_kinetic_punch/kinetic_phonk_strike_134bpm.wav",
+      "prompt_dna": "modern tech phonk 808 sub cowbell pulse, high adrenaline bass drops, viral tiktok rhythm, stutter edits, extreme retention dynamic stabs, no vocals"
+    },
+    {
+      "id": "BGM_05_EPIC_BR_V1_105",
       "filename": "epic_breakthrough_hybrid_105bpm.wav",
       "category": "05_epic_breakthrough",
-      "title": "Epic Breakthrough Theme",
+      "title": "Epic Breakthrough Hybrid",
       "tags": [
         "科技史诗",
         "重大突破",
@@ -128,17 +245,46 @@
         "AG_SOP_06",
         "AG_SOP_02"
       ],
-      "duration_sec": 32.0,
-      "bpm": 100.0,
+      "duration_sec": 36.0,
+      "bpm": 105.0,
       "energy_level": 4,
       "climax_sec": [
-        16.0
+        10.08,
+        24.48
       ],
       "loopable": true,
       "loudness_lufs": -16.0,
       "local_path": "/shared/user/.gemini/youai/assets/bgm/05_epic_breakthrough/epic_breakthrough_hybrid_105bpm.wav",
       "prompt_dna": "inspiring hybrid orchestral swell, uplifting cinematic crescendo, soaring horns, driving percussion, heroic technological revolution, monumental milestone ending, no vocals"
+    },
+    {
+      "id": "BGM_05_EPIC_BR_V2_112",
+      "filename": "epic_horizon_pioneer_112bpm.wav",
+      "category": "05_epic_breakthrough",
+      "title": "Epic Horizon Pioneer",
+      "tags": [
+        "产业破局",
+        "远见卓识",
+        "科技黎明",
+        "巅峰时刻",
+        "震撼终章"
+      ],
+      "sop_affinity": [
+        "AG_SOP_01",
+        "AG_SOP_06"
+      ],
+      "duration_sec": 36.0,
+      "bpm": 112.0,
+      "energy_level": 5,
+      "climax_sec": [
+        10.08,
+        24.48
+      ],
+      "loopable": true,
+      "loudness_lufs": -16.0,
+      "local_path": "/shared/user/.gemini/youai/assets/bgm/05_epic_breakthrough/epic_horizon_pioneer_112bpm.wav",
+      "prompt_dna": "monumental cinematic taiko drums, triumphant brass fanfare, sweeping string ostinato, technological dawn, visionary achievement, majestic future horizon, no vocals"
     }
   ],
-  "total_tracks": 5
+  "total_tracks": 10
 }
