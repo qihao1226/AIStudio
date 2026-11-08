@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """
-YOUAI Cloud Video Factory - Universal TTS Dual-Engine Router (tts_router v1.0)
-Intelligently routes voiceover requests without Colab dependency:
-  1. Primary: Gemini API TTS (24kHz studio broadcast quality, 30 voices)
-  2. Fallback: Piper Offline Neural TTS (100% local, 0 external network, speed-adjustable)
+YOUAI Cloud Video Factory - Universal TTS Tiered Router (tts_router v2.0)
+Strictly adheres to user cost/quality hierarchy:
+  Tier 1 (High Quality & Free): Colab Kokoro-82M (8 studio voices + word timestamps) or F5-TTS
+  Tier 2 (Zero Cost Local Fallback): Piper Neural Offline TTS (instant, 0 network, 0 cost)
+  Tier 3 (Emergency Paid Cloud): Gemini API TTS (only when explicitly requested with --engine gemini)
 """
 import argparse
 import os
@@ -15,13 +16,19 @@ LOCAL_BIN = Path("/home/antigravity/.local/bin")
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="YOUAI Universal Local/API TTS Router")
+    parser = argparse.ArgumentParser(description="YOUAI Cost-Optimized TTS Router")
     parser.add_argument("--text", help="Text to speak")
     parser.add_argument("--file", help="Text file to read")
     parser.add_argument("--output", "-o", required=True, help="Output WAV path")
-    parser.add_argument("--engine", choices=["auto", "gemini", "piper"], default="auto", help="TTS Engine")
-    parser.add_argument("--voice", help="Voice name (Gemini: Puck/Charon/Fenrir/Aoede; Piper: huayan)")
-    parser.add_argument("--speed", type=float, default=1.0, help="Speaking speed multiplier (Piper)")
+    parser.add_argument(
+        "--engine",
+        choices=["auto", "colab", "piper", "gemini"],
+        default="auto",
+        help="TTS Engine selection (auto: Colab -> Piper fallback; gemini is paid emergency only)"
+    )
+    parser.add_argument("--voice", help="Voice name (Colab: zm_yunjian/zm_yunxi/zf_xiaobei; Gemini: Charon/Fenrir; Piper: huayan)")
+    parser.add_argument("--speed", type=float, default=1.0, help="Speaking speed multiplier")
+    parser.add_argument("--with-timestamps", action="store_true", help="Generate Faster-Whisper word-level timestamps (Colab)")
     args = parser.parse_args()
 
     text = ""
@@ -38,32 +45,46 @@ def main() -> int:
         return 1
 
     out_p = Path(args.output).resolve()
-    gemini_bin = str(LOCAL_BIN / "gemini_tts")
+    colab_bin = str(LOCAL_BIN / "colab_voice_gen")
     piper_bin = str(LOCAL_BIN / "local_voice_gen")
+    gemini_bin = str(LOCAL_BIN / "gemini_tts")
 
-    # Route 1: Try Gemini API TTS
-    if args.engine in ("auto", "gemini"):
+    # Explicit Route: Gemini (User deliberately opted for paid cloud)
+    if args.engine == "gemini":
         voice = args.voice or "Charon"
-        print(f"[tts_router] Attempting Gemini API TTS (voice={voice})...")
+        print(f"[tts_router] [Tier 3 Paid] Explicit Gemini API TTS requested (voice={voice})...")
         cmd = [gemini_bin, "--text", text, "-o", str(out_p), "--voice", voice]
-        res = subprocess.run(cmd)
-        if res.returncode == 0 and out_p.exists() and out_p.stat().st_size > 0:
-            print(f"[tts_router] ✅ Gemini API TTS generated successfully -> {out_p}")
-            return 0
-        if args.engine == "gemini":
-            print("[tts_router] ❌ Gemini API TTS failed and engine is locked to gemini", file=sys.stderr)
-            return 1
-        print("[tts_router] ⚠️ Gemini API TTS unavailable or network dropped; falling back to offline Piper...")
+        return subprocess.run(cmd).returncode
 
-    # Route 2: Offline Piper Neural TTS
-    print(f"[tts_router] Executing offline Piper Neural TTS (speed={args.speed})...")
+    # Route 1: Priority Colab Kokoro-82M (Highest quality, completely free)
+    if args.engine in ("auto", "colab"):
+        voice = args.voice or "zm_yunjian"
+        print(f"[tts_router] [Tier 1 Priority] Invoking Colab Kokoro-82M (voice={voice}, speed={args.speed})...")
+        cmd = [colab_bin, "--text", text, "-o", str(out_p), "--voice", voice, "--speed", str(args.speed)]
+        if args.with_timestamps:
+            cmd.append("--with-timestamps")
+        try:
+            res = subprocess.run(cmd, timeout=180)
+            if res.returncode == 0 and out_p.exists() and out_p.stat().st_size > 0:
+                print(f"[tts_router] ✅ Colab voice generation succeeded -> {out_p}")
+                return 0
+            print("[tts_router] ⚠️ Colab voice unavailable or job returned non-zero code.")
+        except Exception as e:
+            print(f"[tts_router] ⚠️ Colab voice failed or timed out: {e}")
+
+        if args.engine == "colab":
+            print("[tts_router] ❌ Engine locked to colab and generation failed.", file=sys.stderr)
+            return 1
+
+    # Route 2: Free Local Offline Piper Fallback (Instant, 0 GPU, 0 network, 0 cost)
+    print(f"[tts_router] [Tier 2 Free Fallback] Executing offline Piper Neural TTS (speed={args.speed})...")
     cmd = [piper_bin, "--text", text, "-o", str(out_p), "--speed", str(args.speed)]
     res = subprocess.run(cmd)
     if res.returncode == 0 and out_p.exists() and out_p.stat().st_size > 0:
         print(f"[tts_router] ✅ Piper Offline TTS generated successfully -> {out_p}")
         return 0
 
-    print("[tts_router] ❌ All TTS engines failed", file=sys.stderr)
+    print("[tts_router] ❌ Both Colab free tier and Piper offline fallback failed.", file=sys.stderr)
     return 1
 
 
