@@ -1,0 +1,10 @@
+{
+  "name": "Spotlight (2015) — Investigative Journalism",
+  "bg_primary": "#0B0F19",
+  "bg_surface": "#1B2320",
+  "accent_primary": "#A0DCAF",
+  "accent_warn": "#FF9A50",
+  "text_primary": "#F4F6F8",
+  "text_muted": "#8A99AD",
+  "vignette": "radial-gradient(circle, rgba(11,15,25,0.15) 40%, rgba(5,8,14,0.88) 100%)"
+}

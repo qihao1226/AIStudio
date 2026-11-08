@@ -1,0 +1,9 @@
+{
+  "passed": true,
+  "video": "/home/antigravity/qihao1226/AIStudio/projects/20261108_sop01_energy_local/交付成片/final_master_1080p.mp4",
+  "duration_s": 36.5,
+  "active_motion_ratio": 1.0,
+  "static_holds_over_2s": 0,
+  "holds_per_min": 0.0,
+  "threshold_active_ratio": 0.3
+}

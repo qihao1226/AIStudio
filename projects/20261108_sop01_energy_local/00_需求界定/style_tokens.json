@@ -1,0 +1,10 @@
+{
+  "name": "Oppenheimer (2023) — Industrial Power & Physics",
+  "bg_primary": "#0D0B09",
+  "bg_surface": "#1C1612",
+  "accent_primary": "#FF9A50",
+  "accent_warn": "#FFD8A0",
+  "text_primary": "#FAF4EB",
+  "text_muted": "#A89882",
+  "vignette": "radial-gradient(circle, rgba(28,22,18,0.1) 35%, rgba(8,6,4,0.92) 100%)"
+}

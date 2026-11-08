@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE fcpxml>
+<fcpxml version="1.10">
+  <resources>
+    <format id="r1" name="FFVideoFormat1080p30" frameDuration="100/3000s" width="1920" height="1080"/>
+  </resources>
+  <library>
+    <event name="YOUAI_Cloud_Factory">
+      <project name="final_master">
+        <sequence format="r1" duration="1800/30s" tcStart="0s" tcFormat="NDF">
+          <spine/>
+        </sequence>
+      </project>
+    </event>
+  </library>
+</fcpxml>

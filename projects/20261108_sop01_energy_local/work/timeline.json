@@ -1,0 +1,90 @@
+{
+  "name": "shots_decision",
+  "width": 1920,
+  "height": 1080,
+  "tracks": [
+    {
+      "name": "主剪辑",
+      "clips": [
+        {
+          "type": "video",
+          "src": "/home/antigravity/qihao1226/AIStudio/projects/20261108_sop01_energy_local/03_素材/shot1_claim.mp4",
+          "in": 0.0,
+          "out": 4.5,
+          "at": 0.0,
+          "note": "【Shot 1 · 核心揭示】AI 算力的终局不是算法，而是能源。",
+          "style": {
+            "width": 1920,
+            "height": 1080,
+            "objectFit": "cover"
+          }
+        },
+        {
+          "type": "video",
+          "src": "/home/antigravity/qihao1226/AIStudio/projects/20261108_sop01_energy_local/03_素材/shot2_evidence.mp4",
+          "in": 0.0,
+          "out": 6.0,
+          "at": 4.5,
+          "note": "【Shot 2 · 权威物证】华尔街与 PJM 最新电网数据显示，全美数据中心负荷排队已突破 260 吉瓦。",
+          "style": {
+            "width": 1920,
+            "height": 1080,
+            "objectFit": "cover"
+          }
+        },
+        {
+          "type": "video",
+          "src": "/home/antigravity/qihao1226/AIStudio/projects/20261108_sop01_energy_local/03_素材/shot3_metric.mp4",
+          "in": 0.0,
+          "out": 6.0,
+          "at": 10.5,
+          "note": "【Shot 3 · 走势冲击】这是全美现有电网总容量的三分之一，传统供电体系瞬间告急。",
+          "style": {
+            "width": 1920,
+            "height": 1080,
+            "objectFit": "cover"
+          }
+        },
+        {
+          "type": "video",
+          "src": "/home/antigravity/qihao1226/AIStudio/projects/20261108_sop01_energy_local/03_素材/shot4_contrast.mp4",
+          "in": 0.0,
+          "out": 6.0,
+          "at": 16.5,
+          "note": "【Shot 4 · 悬殊对比】单柜功率从过去的 7 千瓦，暴增到 AI 液冷机柜的 120 千瓦。",
+          "style": {
+            "width": 1920,
+            "height": 1080,
+            "objectFit": "cover"
+          }
+        },
+        {
+          "type": "video",
+          "src": "/home/antigravity/qihao1226/AIStudio/projects/20261108_sop01_energy_local/03_素材/shot5_keynote.mp4",
+          "in": 0.0,
+          "out": 7.0,
+          "at": 22.5,
+          "note": "【Shot 5 · 真实纪实】为了喂饱庞大的算力巨兽，微软重启三里岛，亚马逊直接买断核反应堆。",
+          "style": {
+            "width": 1920,
+            "height": 1080,
+            "objectFit": "cover"
+          }
+        },
+        {
+          "type": "video",
+          "src": "/home/antigravity/qihao1226/AIStudio/projects/20261108_sop01_energy_local/03_素材/shot6_punchline.mp4",
+          "in": 0.0,
+          "out": 7.0,
+          "at": 29.5,
+          "note": "【Shot 6 · 终局交割】谁能掌控源源不断的核裂变基荷电力，谁就能锁定未来十年的全球算力霸权。",
+          "style": {
+            "width": 1920,
+            "height": 1080,
+            "objectFit": "cover"
+          }
+        }
+      ]
+    }
+  ]
+}
