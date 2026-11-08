@@ -1,0 +1,140 @@
+#!/usr/bin/env python3
+"""
+colab_image_gen - YOUAI Cloud Video Factory Top-Tier Colab Image Generator CLI
+==============================================================================
+Generates 1080p photorealistic commercial photography AND accurate Chinese/English
+typography posters on a remote Google Colab GPU (L4 / A100 / T4) using:
+  - `z-image-turbo` (Default): Tongyi-MAI/Z-Image-Turbo (6B S3-DiT + Qwen3, Apache 2.0)
+  - `flux-schnell`: unsloth/FLUX.1-schnell (12B MMDiT, Apache 2.0)
+
+Usage:
+  colab_image_gen --prompt "A cinematic portrait of..." --output /path/to/out.png
+  colab_image_gen --prompt "科技感商业海报，中央写着醒目的金色中文大字：『云端视频工厂』" --model z-image-turbo --output /path/to/poster.png
+"""
+
+import os
+import sys
+import json
+import time
+import uuid
+import argparse
+import subprocess
+from pathlib import Path
+
+COLAB_BIN = "/home/antigravity/.local/bin/colab"
+WORKER_SCRIPT = "/home/antigravity/qihao1226/AIStudio/scripts/colab_multimodal_worker.py"
+
+
+def run_cmd(cmd: list, check: bool = True) -> subprocess.CompletedProcess:
+    return subprocess.run(cmd, capture_output=True, text=True, check=check)
+
+
+def ensure_session(session_name: str, gpu: str) -> None:
+    res = run_cmd([COLAB_BIN, "status"], check=False)
+    if session_name in (res.stdout or ""):
+        # Verify the container's /content is actually alive
+        chk = run_cmd([COLAB_BIN, "ls", "-s", session_name, "/content"], check=False)
+        if chk.returncode == 0:
+            return
+        print(f"⚠️ [colab_image_gen] Session '{session_name}' container reset; reallocating with --high-mem...", flush=True)
+        # Remove stale session entry from sessions.json
+        sess_file = Path.home() / ".config/colab-cli/sessions.json"
+        if sess_file.exists():
+            try:
+                data = json.loads(sess_file.read_text())
+                data.pop(session_name, None)
+                sess_file.write_text(json.dumps(data, indent=2))
+            except Exception:
+                pass
+    print(f"🚀 [colab_image_gen] Allocating High-RAM Colab {gpu} session '{session_name}'...", flush=True)
+    run_cmd([COLAB_BIN, "new", "-s", session_name, "--gpu", gpu, "--high-mem"], check=True)
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Top-Tier Open-Source Colab Image Generator (Z-Image-Turbo / FLUX.1-schnell)")
+    parser.add_argument("--prompt", required=True, help="Text prompt (supports English & Chinese typography)")
+    parser.add_argument("--output", required=True, help="Local output image path (.png or .jpg)")
+    parser.add_argument("--model", default="z-image-turbo", choices=["z-image-turbo", "flux-schnell", "sdxl-turbo"], help="Model engine (default: z-image-turbo)")
+    parser.add_argument("--aspect", default="16:9", choices=["16:9", "9:16", "1:1"], help="Aspect ratio (default: 16:9 -> 1920x1080)")
+    parser.add_argument("--steps", type=int, default=None, help="Inference steps override")
+    parser.add_argument("--seed", type=int, default=42, help="Random seed")
+    parser.add_argument("--session", default="youai-mm-l4", help="Colab session name")
+    parser.add_argument("--gpu", default="L4", choices=["L4", "A100", "T4"], help="Colab GPU tier")
+    parser.add_argument("--mount-drive", action="store_true", help="Mount 5TB Google Drive Model Vault before running")
+    parser.add_argument("--keep-alive", action="store_true", help="Keep Colab session alive after completion for batch tasks")
+    args = parser.parse_args()
+
+    ensure_session(args.session, args.gpu)
+    if args.mount_drive:
+        run_cmd([COLAB_BIN, "drivemount", "-s", args.session], check=False)
+
+    job_id = uuid.uuid4().hex[:8]
+    remote_worker = "/content/colab_multimodal_worker.py"
+    remote_out = f"/content/youai_img_{job_id}.png"
+    remote_status = f"/content/youai_status_{job_id}.json"
+    remote_log = f"/content/youai_log_{job_id}.txt"
+
+    print(f"📤 [colab_image_gen] Syncing worker v3.5 to session '{args.session}'...", flush=True)
+    run_cmd([COLAB_BIN, "upload", "-s", args.session, WORKER_SCRIPT, remote_worker], check=True)
+
+    cmd_args = [
+        "python3", remote_worker,
+        "--task", "image",
+        "--prompt", args.prompt,
+        "--output", remote_out,
+        "--model", args.model,
+        "--aspect", args.aspect,
+        "--seed", str(args.seed),
+        "--status-file", remote_status,
+    ]
+    if args.steps:
+        cmd_args.extend(["--steps", str(args.steps)])
+
+    launcher_code = f"""
+import subprocess
+with open({remote_log!r}, "w") as lf:
+    subprocess.Popen({cmd_args!r}, stdout=lf, stderr=subprocess.STDOUT, start_new_session=True)
+print("LAUNCHED_IMAGE_JOB")
+"""
+    launcher_file = Path(f"/tmp/launch_img_{job_id}.py")
+    launcher_file.write_text(launcher_code, encoding="utf-8")
+    run_cmd([COLAB_BIN, "exec", "-s", args.session, "-f", str(launcher_file)], check=True)
+    launcher_file.unlink(missing_ok=True)
+
+    local_status = Path(f"/tmp/status_img_{job_id}.json")
+    t0 = time.time()
+    seen_once = False
+    miss_streak = 0
+    while time.time() - t0 < 900:
+        time.sleep(5)
+        r = run_cmd([COLAB_BIN, "download", "-s", args.session, remote_status, str(local_status)], check=False)
+        if r.returncode == 0 and local_status.exists():
+            seen_once = True
+            miss_streak = 0
+            try:
+                st = json.loads(local_status.read_text(encoding="utf-8"))
+                state = st.get("state")
+                print(f"  ⏳ [{int(time.time()-t0)}s] {state}: {st.get('message')}", flush=True)
+                if state == "completed":
+                    break
+                if state == "failed":
+                    raise RuntimeError(f"Remote worker failed: {st.get('message')}\n{st.get('traceback', '')}")
+            except json.JSONDecodeError:
+                pass
+        elif seen_once:
+            miss_streak += 1
+            if miss_streak >= 3:
+                raise RuntimeError("Remote Colab container disconnected or reset during execution.")
+    else:
+        raise TimeoutError("Timed out waiting for remote Colab image generation.")
+
+    local_status.unlink(missing_ok=True)
+    out_p = Path(args.output).resolve()
+    out_p.parent.mkdir(parents=True, exist_ok=True)
+    print(f"📥 [colab_image_gen] Downloading mastered image -> {out_p}", flush=True)
+    run_cmd([COLAB_BIN, "download", "-s", args.session, remote_out, str(out_p)], check=True)
+    print(f"✅ [colab_image_gen] Success! Image saved at: {out_p}", flush=True)
+
+
+if __name__ == "__main__":
+    main()

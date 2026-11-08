@@ -46,10 +46,10 @@ def dispatch_to_colab_gpu(job_dir: Path, session_id: str = "sop04-gpu", gpu: str
     remote_worker = "/content/colab_multimodal_worker.py"
 
     # 1. Ensure active Colab GPU session using google-colab-cli 0.7.5 syntax
-    sessions_res = subprocess.run([COLAB_BIN, "sessions"], capture_output=True, text=True, stdin=subprocess.DEVNULL)
+    sessions_res = subprocess.run([COLAB_BIN, "status"], capture_output=True, text=True, stdin=subprocess.DEVNULL)
     if session_id not in (sessions_res.stdout or ""):
         new_cmd = [COLAB_BIN, "new", "-s", session_id, "--gpu", gpu]
-        if gpu in ("A100", "T4"):
+        if gpu in ("A100", "L4", "T4"):
             new_cmd.append("--high-mem")
         run_cmd(new_cmd, check=True)
 

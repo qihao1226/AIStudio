@@ -178,20 +178,35 @@ class ColabHttpRpcClient:
         req_params = dict(self.params)
         if params:
             req_params.update(params)
-        resp = requests.request(
-            method,
-            url,
-            headers=self.headers,
-            params=req_params,
-            json=json_data,
-            timeout=timeout,
-        )
-        if resp.status_code == 404:
-            return None
-        resp.raise_for_status()
-        if method == "DELETE" or not resp.text:
-            return {}
-        return resp.json()
+        last_err = None
+        for attempt in range(4):
+            try:
+                resp = requests.request(
+                    method,
+                    url,
+                    headers=self.headers,
+                    params=req_params,
+                    json=json_data,
+                    timeout=timeout,
+                )
+                if resp.status_code == 404:
+                    return None
+                if resp.status_code in (500, 502, 503, 504) and attempt < 3:
+                    time.sleep(0.8 * (attempt + 1))
+                    continue
+                resp.raise_for_status()
+                if method == "DELETE" or not resp.text:
+                    return {}
+                return resp.json()
+            except requests.exceptions.RequestException as e:
+                last_err = e
+                if attempt < 3:
+                    time.sleep(0.8 * (attempt + 1))
+                    continue
+                raise
+        if last_err:
+            raise last_err
+        return None
 
     def _put_text(self, remote_path: str, text: str) -> None:
         b64 = base64.b64encode(text.encode("utf-8")).decode("ascii")

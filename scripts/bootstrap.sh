@@ -52,10 +52,15 @@ for src_dir in [persist / "bin", repo_bin]:
                 if src_dir == repo_bin:
                     (persist / "bin" / p.name).write_bytes(data)
 
-# 2. Restore colab-cli OAuth token to local xfs
+# 2. Restore colab-cli OAuth token (prefer permanent refresh_token in /shared/user/.gemini/colab_token.json)
+master_tok = Path("/shared/user/.gemini/colab_token.json")
 tok_src = persist / "config/colab-cli/token.json"
 tok_dst = Path("/home/antigravity/.config/colab-cli/token.json")
-if tok_src.exists():
+if master_tok.exists():
+    data = master_tok.read_bytes()
+    tok_src.write_bytes(data)
+    tok_dst.write_bytes(data)
+elif tok_src.exists():
     tok_dst.write_bytes(tok_src.read_bytes())
 
 # 3. Apply colab-cli Pure-HTTP RPC patches

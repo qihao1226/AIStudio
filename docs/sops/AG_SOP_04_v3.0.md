@@ -25,15 +25,15 @@ export PATH="/home/antigravity/.local/bin:/shared/user/.gemini/youai/bin:$PATH"
 
 ---
 
-## 一、七大顶层设计决策（v3.0 硬核量化门禁）
+## 一、七大顶层设计决策（v3.5 顶级开源多模态量化门禁）
 
 | # | 决策维度 | 核心规范与物理量化标准 | 机器拦截红线 |
 | :---: | :--- | :--- | :--- |
-| **1** | **零外部付费 API 闭环** | 所有 ASR 转写、TTS 语音合成、SDXL-Turbo 分镜底图生成，一律通过 `colab` CLI 派发至 Google Colab GPU 执行，或使用本地 `edge-tts` 高保真兜底。 | 严禁在脚本中硬编码调用外部收费多模态网关。 |
-| **2** | **SDXL-Turbo 无伪影 1080p 铁律** | 调用 `stabilityai/sdxl-turbo` 时，**必须锁定 `guidance_scale=0.0`、`num_inference_steps=4`**（严禁设 `1.5` 导致色彩过曝崩坏），并通过 `LANCZOS` 超采样输出 **`1920x1080` 或 `1080x1920` 全高清 PNG**。 | 分辨率低于 `1080p`（如 `512x512`）直接由 `verify_assets_gatekeeper` 拦截。 |
-| **3** | **24kHz PCM WAV + 30ms 防爆音** | 所有 TTS 产出必须经 FFmpeg 强制转码为 **`24000Hz / 16-bit / mono PCM WAV` (`pcm_s16le`)**，并在首尾施加 **`30ms afade` 淡入淡出**。 | 扩展名为 `.wav` 但内部为 MP3 编码或无淡化直接拦截。 |
-| **4** | **逐词级毫秒时间戳（Word ASR）** | `faster-whisper (large-v3)` 必须开启 `word_timestamps=True`，同时输出 `words` 与 `segments` 双层 JSON。 | 缺少逐词时间戳导致字幕与重音卡点脱节。 |
-| **5** | **四层视觉景深合成架构** | 严禁“单张静态底图 + 居中白字”幻灯片式拼贴！每一镜必须包含四层景深：① 动态推拉底图（Ken Burns Scale $1.00 \to 1.08$）；② 电影暗角遮罩（Vignette）；③ 视觉主体卡片/数据挂件；④ 逐词高亮字幕与底部进度条。 | `motion_check` 运镜活跃率 $<30\%$ 直接拦截。 |
+| **1** | **零外部付费 API 闭环** | 所有视频生成（`MiniMax-H3`）、1080p 生图与中英海报排版（`Z-Image-Turbo` / `FLUX.1-schnell`）、超拟真播客配音（`Kokoro-82M`）、零样本声音克隆（`F5-TTS`）及毫秒级字幕转写（`Faster-Whisper-Turbo`），一律通过 `colab` CLI 派发至 Google Colab GPU 执行，并依托 5TB Google Drive 模型金库缓存。 | 严禁在脚本中硬编码调用外部收费多模态网关。 |
+| **2** | **Z-Image-Turbo / FLUX.1 1080p 铁律** | 默认调用开源榜首 `Tongyi-MAI/Z-Image-Turbo`（6B S3-DiT + `Qwen3` 文本编码器，`num_inference_steps=9, guidance_scale=0.0, low_cpu_mem_usage=True`）或 `unsloth/FLUX.1-schnell`，原生支持中英双语海报大字精准渲染，并通过 `LANCZOS` 输出 **`1920x1080` 或 `1080x1920` 全高清 PNG**。 | 分辨率低于 `1080p`（如 `512x512`）直接由 `verify_assets_gatekeeper` 拦截。 |
+| **3** | **Kokoro-82M / F5-TTS + `-14 LUFS` 防爆音** | 默认采用 `hexgrad/Kokoro-82M`（8 大中文演播室音色 `zm_yunjian`/`zm_yunxi`/`zf_xiaoxiao` 等）或 `SWivid/F5-TTS`（5 秒参考音频零样本克隆），产出必须经 FFmpeg 施加 **`30ms afade` 防爆音淡入淡出 + `-14.0 LUFS` 响度标准化 + `44100Hz / 16-bit PCM WAV` (`pcm_s16le`)**。 | 扩展名为 `.wav` 但内部为 MP3 编码或无淡化直接拦截。 |
+| **4** | **逐词级毫秒时间戳（Faster-Whisper-Turbo）** | 采用 `mobiuslabsgmbh/faster-whisper-large-v3-turbo` 开启 `word_timestamps=True`，通过 FFmpeg 16kHz 浮点管道直传，同时输出 `words` 与 `segments` 双层 JSON。 | 缺少逐词时间戳导致字幕与重音卡点脱节。 |
+| **5** | **四层视觉景深合成架构** | 严禁“单张静态底图 + 居中白字”幻灯片式拼贴！每一镜必须包含四层景深：① `MiniMax-H3` 真动态分镜或动态推拉底图；② 电影暗角遮罩（Vignette）；③ 视觉主体卡片/数据挂件；④ 逐词高亮字幕与底部进度条。 | `motion_check` 运镜活跃率 $<30\%$ 直接拦截。 |
 | **6** | **横转竖 `9:16` 智能焦点构图** | 输出竖屏 `1080x1920` 版本时，禁止无脑裁切画面正中央导致左/右侧文字被腰斩；必须采用独立竖屏排版或焦点安全区重构。 | 竖屏画面出现文字截断或边缘出界。 |
 | **7** | **100% 自包含货架交付** | 立项、Colab 原始产出、双画幅成片、12 格联系表与质检绿单全部收拢于 `04_全源素材重构/{YYYYMMDD}_{项目名}_v3/`。 | 根目录散落临时文件直接判定违规。 |
 
@@ -46,19 +46,30 @@ export PATH="/home/antigravity/.local/bin:/shared/user/.gemini/youai/bin:$PATH"
 ```json
 // ./work/colab_job/visual_prompts.json
 [
-  {"id": "shot_001", "prompt": "Massive hyperscale AI data center interior, glowing liquid cooling pipes, cinematic dark mood", "aspect": "16:9"},
-  {"id": "shot_002", "prompt": "High voltage electrical grid transformer substation at dusk, industrial amber lighting", "aspect": "16:9"}
+  {"id": "shot_001", "prompt": "Massive hyperscale AI data center interior, glowing liquid cooling pipes, cinematic dark mood", "aspect": "16:9", "model": "z-image-turbo"},
+  {"id": "shot_002", "prompt": "High voltage electrical grid transformer substation at dusk, industrial amber lighting", "aspect": "16:9", "model": "z-image-turbo"}
 ]
 ```
 
-### 第 2 步：一键调度 Google Colab GPU 算力车间 (`sop04_colab_orchestrator.py`)
+### 第 2 步：一键调度 Google Colab GPU 顶级开源多模态矩阵
 ```bash
-# 全自动连接 Colab GPU -> 上传工单 -> 执行 ASR/TTS/SDXL-Turbo 1080p -> 拉回产物 -> 执行 Gatekeeper 校验
+# 方式 A：单点独立调用三大王牌 CLI（按需随时生成分镜图、配音克隆或音画同出视频）
+# 1) 1080p 写实生图 & 中英双语海报渲染 (Z-Image-Turbo / FLUX.1-schnell on Colab L4)
+colab_image_gen --prompt '科技感数据中心，中央全息屏显示金色中文「云端视频工厂」' --model z-image-turbo --aspect 16:9 --output ./03_素材/shot_001.png
+
+# 2) 演播室级中文旁白 (Kokoro-82M) 或 5 秒零样本声音克隆 (F5-TTS) + 毫秒级逐词时间戳 (.words.json)
+colab_voice_gen --text "欢迎来到云端视频生产工厂，每一帧都是工业级母带。" --voice zm_yunjian --with-timestamps --output ./03_素材/generated_tts.wav
+colab_voice_gen --text "这是零样本克隆出的专属主播音色。" --engine f5-tts --ref-audio ./03_素材/speaker_ref_5s.wav --output ./03_素材/cloned_tts.wav
+
+# 3) 角色参考图生成音画同步对口型视频 (MiniMax-H3 Ref2VA / FL2VA on Colab A100)
+minimax_h3_colab --mode ref2va --image ./03_素材/shot_001.png --prompt "Cinematic medium shot..." --speech "[Mandarin] 欢迎来到云端视频工厂。" --output ./03_素材/shot_001_video.mp4
+
+# 方式 B：工程级批量工单全自动编排 (sop04_colab_orchestrator.py)
 python3 /home/antigravity/qihao1226/AIStudio/scripts/sop04_colab_orchestrator.py \
   --job-dir ./work/colab_job \
-  --session sop04-gpu
+  --session youai-mm-l4
 ```
-- 底层由 [`colab_multimodal_worker.py`](file:///home/antigravity/qihao1226/AIStudio/scripts/colab_multimodal_worker.py) 执行，也可在网页端打开 [`notebooks/colab_multimodal_worker.ipynb`](file:///home/antigravity/qihao1226/AIStudio/notebooks/colab_multimodal_worker.ipynb) 交互式运行。
+- 底层由 [`colab_multimodal_worker.py`](file:///home/antigravity/qihao1226/AIStudio/scripts/colab_multimodal_worker.py) (v3.5) 与 [`colab_minimax_h3_worker.py`](file:///home/antigravity/qihao1226/AIStudio/scripts/colab_minimax_h3_worker.py) 驱动。
 
 ### 第 3 步：音频母带混音与 4 层 OpenFilm 工业总装
 ```bash

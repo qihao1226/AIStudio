@@ -1,0 +1,157 @@
+#!/usr/bin/env python3
+"""
+colab_voice_gen - YOUAI Cloud Video Factory Top-Tier Colab Voice & Cloning CLI
+==============================================================================
+Synthesizes broadcast-grade (-14.0 LUFS, 44.1kHz PCM WAV) Mandarin & English
+narration OR Zero-Shot Voice Cloning on Google Colab GPU (L4 / A100 / T4),
+with optional millisecond word-level timestamp extraction via Faster-Whisper-Turbo:
+  - `kokoro` (Default Studio Narrator): hexgrad/Kokoro-82M (Apache 2.0)
+      Mandarin voices: zm_yunjian (纪录片浑厚男声), zm_yunxi (活力叙事男声),
+                       zm_yunyang (专业播音男声), zf_xiaoxiao (旗舰播客女声),
+                       zf_xiaobei (知性科技女声), zf_xiaoni, zf_xiaoyi, zm_yunxia
+      English voices:  af_heart, af_bella, am_fenrir, am_michael, bm_george
+  - `f5-tts` (Zero-Shot Voice Cloning): SWivid/F5-TTS (Flow Matching)
+      Clones any 3-10s reference WAV file (`--ref-audio`) in Mandarin/English!
+
+Usage:
+  colab_voice_gen --text "欢迎来到云端视频生产工厂，算力即生产力。" --voice zm_yunjian --with-timestamps --output /path/to/narration.wav
+  colab_voice_gen --text "这是用五秒参考音频零样本克隆出的专属数字分身配音。" --engine f5-tts --ref-audio /path/to/ref.wav --output /path/to/cloned.wav
+"""
+
+import os
+import sys
+import json
+import time
+import uuid
+import argparse
+import subprocess
+from pathlib import Path
+
+COLAB_BIN = "/home/antigravity/.local/bin/colab"
+WORKER_SCRIPT = "/home/antigravity/qihao1226/AIStudio/scripts/colab_multimodal_worker.py"
+
+
+def run_cmd(cmd: list, check: bool = True) -> subprocess.CompletedProcess:
+    return subprocess.run(cmd, capture_output=True, text=True, check=check)
+
+
+def ensure_session(session_name: str, gpu: str) -> None:
+    res = run_cmd([COLAB_BIN, "status"], check=False)
+    if session_name in (res.stdout or ""):
+        chk = run_cmd([COLAB_BIN, "ls", "-s", session_name, "/content"], check=False)
+        if chk.returncode == 0:
+            return
+        print(f"⚠️ [colab_voice_gen] Session '{session_name}' container reset; reallocating with --high-mem...", flush=True)
+        sess_file = Path.home() / ".config/colab-cli/sessions.json"
+        if sess_file.exists():
+            try:
+                data = json.loads(sess_file.read_text())
+                data.pop(session_name, None)
+                sess_file.write_text(json.dumps(data, indent=2))
+            except Exception:
+                pass
+    print(f"🚀 [colab_voice_gen] Allocating High-RAM Colab {gpu} session '{session_name}'...", flush=True)
+    run_cmd([COLAB_BIN, "new", "-s", session_name, "--gpu", gpu, "--high-mem"], check=True)
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Top-Tier Open-Source Colab Voice, Cloning & ASR CLI (Kokoro-82M / F5-TTS / Faster-Whisper-Turbo)")
+    parser.add_argument("--text", required=True, help="Text to synthesize (Mandarin, English, or bilingual)")
+    parser.add_argument("--output", required=True, help="Local output WAV path (.wav)")
+    parser.add_argument("--voice", default="zm_yunjian", help="Studio voice ID (e.g., zm_yunjian, zm_yunxi, zf_xiaoxiao, zf_xiaobei, af_heart)")
+    parser.add_argument("--engine", default="auto", choices=["auto", "kokoro", "f5-tts"], help="TTS engine (default: auto -> f5-tts if --ref-audio given, else kokoro)")
+    parser.add_argument("--ref-audio", help="Local reference WAV file (3-10s) for F5-TTS zero-shot voice cloning")
+    parser.add_argument("--ref-text", default="", help="Optional transcript of the reference audio")
+    parser.add_argument("--speed", type=float, default=1.0, help="Speech speed multiplier (default: 1.0)")
+    parser.add_argument("--with-timestamps", action="store_true", help="Also run Faster-Whisper-Turbo to download .words.json word-level timestamps")
+    parser.add_argument("--session", default="youai-mm-l4", help="Colab session name")
+    parser.add_argument("--gpu", default="L4", choices=["L4", "A100", "T4"], help="Colab GPU tier")
+    parser.add_argument("--mount-drive", action="store_true", help="Mount 5TB Google Drive Model Vault before running")
+    args = parser.parse_args()
+
+    ensure_session(args.session, args.gpu)
+    if args.mount_drive:
+        run_cmd([COLAB_BIN, "drivemount", "-s", args.session], check=False)
+
+    job_id = uuid.uuid4().hex[:8]
+    remote_worker = "/content/colab_multimodal_worker.py"
+    remote_out = f"/content/youai_tts_{job_id}.wav"
+    remote_ts = f"/content/youai_tts_{job_id}.words.json"
+    remote_status = f"/content/youai_status_{job_id}.json"
+    remote_log = f"/content/youai_log_{job_id}.txt"
+
+    print(f"📤 [colab_voice_gen] Syncing worker v3.5 to session '{args.session}'...", flush=True)
+    run_cmd([COLAB_BIN, "upload", "-s", args.session, WORKER_SCRIPT, remote_worker], check=True)
+
+    remote_ref = None
+    if args.ref_audio:
+        ref_p = Path(args.ref_audio).resolve()
+        if not ref_p.exists():
+            raise FileNotFoundError(f"Reference audio not found: {ref_p}")
+        remote_ref = f"/content/youai_ref_{job_id}{ref_p.suffix}"
+        print(f"📤 [colab_voice_gen] Uploading reference audio -> {remote_ref}", flush=True)
+        run_cmd([COLAB_BIN, "upload", "-s", args.session, str(ref_p), remote_ref], check=True)
+
+    cmd_args = [
+        "python3", remote_worker,
+        "--task", "tts",
+        "--prompt", args.text,
+        "--output", remote_out,
+        "--voice", args.voice,
+        "--engine", args.engine,
+        "--speed", str(args.speed),
+        "--status-file", remote_status,
+    ]
+    if remote_ref:
+        cmd_args.extend(["--ref-audio", remote_ref])
+    if args.ref_text:
+        cmd_args.extend(["--ref-text", args.ref_text])
+    if args.with_timestamps:
+        cmd_args.append("--with-timestamps")
+
+    launcher_code = f"""
+import subprocess
+with open({remote_log!r}, "w") as lf:
+    subprocess.Popen({cmd_args!r}, stdout=lf, stderr=subprocess.STDOUT, start_new_session=True)
+print("LAUNCHED_TTS_JOB")
+"""
+    launcher_file = Path(f"/tmp/launch_tts_{job_id}.py")
+    launcher_file.write_text(launcher_code, encoding="utf-8")
+    run_cmd([COLAB_BIN, "exec", "-s", args.session, "-f", str(launcher_file)], check=True)
+    launcher_file.unlink(missing_ok=True)
+
+    local_status = Path(f"/tmp/status_tts_{job_id}.json")
+    t0 = time.time()
+    while time.time() - t0 < 900:
+        time.sleep(4)
+        r = run_cmd([COLAB_BIN, "download", "-s", args.session, remote_status, str(local_status)], check=False)
+        if r.returncode == 0 and local_status.exists():
+            try:
+                st = json.loads(local_status.read_text(encoding="utf-8"))
+                state = st.get("state")
+                print(f"  ⏳ [{int(time.time()-t0)}s] {state}: {st.get('message')}", flush=True)
+                if state == "completed":
+                    break
+                if state == "failed":
+                    raise RuntimeError(f"Remote worker failed: {st.get('message')}\n{st.get('traceback', '')}")
+            except json.JSONDecodeError:
+                pass
+    else:
+        raise TimeoutError("Timed out waiting for remote Colab voice generation.")
+
+    local_status.unlink(missing_ok=True)
+    out_p = Path(args.output).resolve()
+    out_p.parent.mkdir(parents=True, exist_ok=True)
+    print(f"📥 [colab_voice_gen] Downloading mastered -14 LUFS WAV -> {out_p}", flush=True)
+    run_cmd([COLAB_BIN, "download", "-s", args.session, remote_out, str(out_p)], check=True)
+
+    if args.with_timestamps:
+        local_ts = out_p.with_suffix(".words.json")
+        run_cmd([COLAB_BIN, "download", "-s", args.session, remote_ts, str(local_ts)], check=True)
+        print(f"📥 [colab_voice_gen] Downloaded millisecond word timestamps -> {local_ts}", flush=True)
+
+    print(f"✅ [colab_voice_gen] Success! Audio saved at: {out_p}", flush=True)
+
+
+if __name__ == "__main__":
+    main()

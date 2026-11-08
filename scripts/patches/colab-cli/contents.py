@@ -37,18 +37,32 @@ class ContentsClient:
         if params:
             req_params.update(params)
 
-        response = requests.request(method, url, params=req_params, json=json_data)
-
-        if get_status_code(response) == 404:
-            raise FileNotFoundError(f"File or directory not found: {path}")
-
-        response.raise_for_status()
-
-        # DELETE doesn't return JSON
-        if method == "DELETE":
-            return None
-
-        return response.json()
+        import time
+        last_err = None
+        for attempt in range(4):
+            try:
+                response = requests.request(
+                    method, url, params=req_params, json=json_data, timeout=30.0
+                )
+                status = get_status_code(response)
+                if status == 404:
+                    raise FileNotFoundError(f"File or directory not found: {path}")
+                if status in (500, 502, 503, 504) and attempt < 3:
+                    time.sleep(0.8 * (attempt + 1))
+                    continue
+                response.raise_for_status()
+                if method == "DELETE":
+                    return None
+                return response.json()
+            except requests.exceptions.RequestException as e:
+                last_err = e
+                if attempt < 3:
+                    time.sleep(0.8 * (attempt + 1))
+                    continue
+                raise
+        if last_err:
+            raise last_err
+        return None
 
     def list_dir(self, path: str):
         return self._request("GET", path)
