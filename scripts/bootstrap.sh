@@ -20,6 +20,21 @@ mkdir -p "${PERSIST_ROOT}/bin" \
          "/home/antigravity/.config/colab-cli" \
          "/home/antigravity/.local/share/fonts"
 
+# Extreme zero-state disaster recovery: restore full environment from Google Drive if skills are empty
+DISASTER_ARCHIVE_ID="1SM_161h4R9JSiJRfYBE16zcqjx-kPmYI"
+if [ ! -d "${PERSIST_ROOT}/skills" ] || [ -z "$(ls -A "${PERSIST_ROOT}/skills" 2>/dev/null)" ]; then
+    echo "[youai-bootstrap] ⚠️ Zero-state detected: restoring from Google Drive snapshot (${DISASTER_ARCHIVE_ID})..."
+    TMP_PKG="/tmp/youai_full_disaster_recovery_v3.5.tar.gz"
+    if command -v gdrive >/dev/null 2>&1; then
+        gdrive readonly download "${DISASTER_ARCHIVE_ID}" -o "${TMP_PKG}" || true
+        if [ -f "${TMP_PKG}" ]; then
+            tar -xzf "${TMP_PKG}" -C /shared/user/.gemini || true
+            rm -f "${TMP_PKG}"
+            echo "[youai-bootstrap] ✅ Disaster recovery snapshot restored from Google Drive!"
+        fi
+    fi
+fi
+
 echo "[youai-bootstrap] 2/5 Linking /home/antigravity/skills -> ${PERSIST_ROOT}/skills..."
 if [ ! -L "/home/antigravity/skills" ]; then
     rm -rf "/home/antigravity/skills"
