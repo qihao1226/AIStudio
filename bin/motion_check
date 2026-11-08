@@ -1,0 +1,65 @@
+#!/usr/bin/env python3
+"""
+YOUAI Cloud Video Factory - SOP 01 Optical Flow & Frame Vitality Checker (motion_check v3.0)
+Usage: motion_check <video_path> [--top 0.8] [--json]
+Measures camera/layer motion activity ratio and detects static holds > 2.0s.
+"""
+import argparse
+import json
+import subprocess
+import sys
+from pathlib import Path
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="SOP 01 Motion Vitality Gatekeeper v3.0")
+    parser.add_argument("video", help="Target video path")
+    parser.add_argument("--top", type=float, default=0.8, help="Top crop fraction to exclude bottom subtitles")
+    parser.add_argument("--json", action="store_true", help="Output JSON report")
+    args = parser.parse_args()
+
+    vpath = Path(args.video).resolve()
+    if not vpath.exists():
+        print(json.dumps({"passed": False, "error": f"File not found: {vpath}"}))
+        return 1
+
+    dur_str = subprocess.check_output([
+        "ffprobe", "-v", "error", "-show_entries", "format=duration",
+        "-of", "default=noprint_wrappers=1:nokey=1", str(vpath)
+    ], text=True).strip()
+    dur = float(dur_str) if dur_str else 1.0
+
+    cmd = [
+        "ffmpeg", "-hide_banner", "-nostats", "-i", str(vpath),
+        "-vf", f"crop=iw:ih*{args.top}:0:0,freezedetect=n=-50dB:d=2.0",
+        "-an", "-f", "null", "-"
+    ]
+    proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    import re
+    freeze_durs = [float(x) for x in re.findall(r"freeze_duration:\s*(\d+(?:\.\d+)?)", proc.stderr)]
+    total_freeze = sum(freeze_durs)
+    active_ratio = round(max(0.0, 1.0 - (total_freeze / dur)), 3)
+    holds_per_min = round(len(freeze_durs) / max(dur / 60.0, 0.1), 2)
+    passed = active_ratio >= 0.30 and holds_per_min <= 1.5
+
+    report = {
+        "passed": passed,
+        "video": str(vpath),
+        "duration_s": round(dur, 2),
+        "active_motion_ratio": active_ratio,
+        "static_holds_over_2s": len(freeze_durs),
+        "holds_per_min": holds_per_min,
+        "threshold_active_ratio": 0.30,
+    }
+    if args.json:
+        print(json.dumps(report, indent=2, ensure_ascii=False))
+    else:
+        print(
+            f"[motion_check] {'PASS' if passed else 'FAIL'} | "
+            f"active={active_ratio*100:.1f}% (>=30%) | holds>2s={holds_per_min}/min (<=1.5/min)"
+        )
+    return 0 if passed else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

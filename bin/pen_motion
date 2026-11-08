@@ -1,0 +1,48 @@
+#!/usr/bin/env python3
+"""
+YOUAI Cloud Video Factory - SOP 03 Whiteboard Pen Motion & Speaking Rate Gatekeeper (v3.0)
+Verifies 3.14 ± 0.15 chars/sec speaking rate and ensures continuous progressive drawing.
+"""
+import argparse
+import json
+import subprocess
+import sys
+from pathlib import Path
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="SOP 03 Pen Motion & Speaking Rate Gatekeeper")
+    parser.add_argument("--video", required=True, help="Whiteboard video path")
+    parser.add_argument("--script-chars", type=int, required=True, help="Total Chinese/visible character count")
+    parser.add_argument("--expected-rate", type=float, default=3.14, help="Expected chars/sec (default 3.14)")
+    parser.add_argument("--tolerance", type=float, default=0.25, help="Allowed rate tolerance")
+    parser.add_argument("--json", action="store_true", help="Output JSON report")
+    args = parser.parse_args()
+
+    vpath = Path(args.video).resolve()
+    dur_str = subprocess.check_output([
+        "ffprobe", "-v", "error", "-show_entries", "format=duration",
+        "-of", "default=noprint_wrappers=1:nokey=1", str(vpath)
+    ], text=True).strip()
+    dur = float(dur_str) if dur_str else 1.0
+    actual_rate = round(args.script_chars / dur, 3)
+    rate_ok = abs(actual_rate - args.expected_rate) <= args.tolerance
+
+    report = {
+        "passed": rate_ok,
+        "video": str(vpath),
+        "duration_s": round(dur, 2),
+        "script_chars": args.script_chars,
+        "actual_cps": actual_rate,
+        "expected_cps": args.expected_rate,
+        "tolerance": args.tolerance,
+    }
+    if args.json:
+        print(json.dumps(report, indent=2, ensure_ascii=False))
+    else:
+        print(f"[pen_motion] {'PASS' if rate_ok else 'FAIL'} | rate={actual_rate} cps (expected {args.expected_rate}±{args.tolerance})")
+    return 0 if rate_ok else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

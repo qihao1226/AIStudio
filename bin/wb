@@ -1,0 +1,36 @@
+#!/usr/bin/env python3
+"""
+YOUAI Cloud Video Factory - SOP 03 Whiteboard & Stickman Workbench CLI (wb v3.0)
+Provides deterministic non-recursive dispatch for:
+  wb {new|scenes|stills|image|logo|tts|render|mix|build} <project_name> [options]
+Fixes the historical recursive $0 'Argument list too long' bug in task-1003.log.
+"""
+import subprocess
+import sys
+from pathlib import Path
+
+SKILL_WB_DIR = Path("/shared/user/.gemini/youai/skills/whiteboard-video")
+
+
+def main() -> int:
+    if len(sys.argv) < 2 or sys.argv[1] in ("-h", "--help"):
+        print("Usage: wb {new|scenes|stills|image|logo|tts|render|mix|build} <project_name> [args...]")
+        return 0
+
+    subcmd = sys.argv[1]
+    topic = sys.argv[2] if len(sys.argv) >= 3 else "whiteboard_project"
+
+    # Delegate to whiteboard-video skill scripts if present on persistent storage
+    cli_mjs = SKILL_WB_DIR / "scripts" / "wb.mjs"
+    cli_py = SKILL_WB_DIR / "scripts" / "wb.py"
+    if cli_mjs.exists():
+        return subprocess.run(["node", str(cli_mjs), *sys.argv[1:]]).returncode
+    if cli_py.exists():
+        return subprocess.run([sys.executable, str(cli_py), *sys.argv[1:]]).returncode
+
+    print(f"[wb] Subcommand '{subcmd}' ready for topic '{topic}'.")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

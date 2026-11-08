@@ -1,0 +1,67 @@
+#!/usr/bin/env python3
+"""
+YOUAI Cloud Video Factory - Sub-Bass Kick & Beat Onset Detector (v3.0)
+Extracts sub-bass (<150Hz) energy envelope via FFmpeg + NumPy to produce
+millisecond-accurate Kick/Downbeat timestamps for SOP 02 Kinetic Typography.
+"""
+import argparse
+import json
+import subprocess
+import sys
+import wave
+import tempfile
+from pathlib import Path
+import numpy as np
+
+
+def detect_beats(audio_path: Path, sensitivity: float = 0.55, min_interval: float = 0.45) -> list[float]:
+    with tempfile.NamedTemporaryFile(suffix=".wav", delete=True) as tmp:
+        subprocess.run([
+            "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
+            "-i", str(audio_path),
+            "-af", "lowpass=f=150,aresample=8000",
+            "-ac", "1", "-c:a", "pcm_s16le", tmp.name
+        ], check=True)
+        with wave.open(tmp.name, "rb") as wf:
+            sr = wf.getframerate()
+            raw = wf.readframes(wf.getnframes())
+            samples = np.frombuffer(raw, dtype=np.int16).astype(np.float32) / 32768.0
+
+    hop = int(sr * 0.01)  # 10ms resolution
+    n_frames = max(1, len(samples) // hop)
+    energy = np.array([
+        np.sqrt(np.mean(samples[i * hop:(i + 1) * hop] ** 2))
+        for i in range(n_frames)
+    ])
+    diff = np.maximum(0.0, np.diff(energy, prepend=energy[0]))
+    thresh = np.quantile(diff, max(0.5, min(0.95, 1.0 - sensitivity * 0.4)))
+
+    beats = [0.0]
+    for idx, val in enumerate(diff):
+        t = round(idx * 0.01, 3)
+        if val >= thresh and (t - beats[-1]) >= min_interval:
+            beats.append(t)
+    return beats
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="YOUAI Beat Detector v3.0")
+    parser.add_argument("--input", "-i", required=True, help="Input audio/BGM file")
+    parser.add_argument("--output", "-o", required=True, help="Output beats JSON path")
+    parser.add_argument("--sensitivity", type=float, default=0.55, help="Detection sensitivity (0.1-0.9)")
+    parser.add_argument("--min-interval", type=float, default=0.45, help="Minimum interval between beats (s)")
+    args = parser.parse_args()
+
+    in_path = Path(args.input).resolve()
+    out_path = Path(args.output).resolve()
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+
+    beats = detect_beats(in_path, args.sensitivity, args.min_interval)
+    payload = {"source": str(in_path), "count": len(beats), "beats": beats}
+    out_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    print(f"[beat_detector] Extracted {len(beats)} beats -> {out_path}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

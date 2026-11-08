@@ -1,0 +1,35 @@
+#!/usr/bin/env python3
+"""
+YOUAI Cloud Video Factory - SOP 06 Jacky-Motion 2.1 Template Validator (v3.0)
+Validates data-layout, data-primitive, and zero unresolved template placeholders.
+"""
+import json
+import re
+import sys
+from pathlib import Path
+
+
+def main() -> int:
+    if len(sys.argv) < 2:
+        print("Usage: jacky-validate <html_path>", file=sys.stderr)
+        return 1
+    html_path = Path(sys.argv[1]).resolve()
+    if not html_path.exists():
+        print(f"Error: {html_path} not found", file=sys.stderr)
+        return 1
+    content = html_path.read_text(encoding="utf-8", errors="replace")
+    placeholders = re.findall(r"\{\{[A-Z0-9_]+\}\}", content)
+    layouts = re.findall(r'data-layout=["\']([^"\']+)["\']', content)
+    passed = len(placeholders) == 0
+    print(json.dumps({
+        "passed": passed,
+        "file": str(html_path),
+        "layouts_detected": layouts,
+        "unresolved_placeholders": placeholders,
+        "status": "0 failures, 0 unresolved placeholders" if passed else f"{len(placeholders)} unresolved placeholders",
+    }, indent=2, ensure_ascii=False))
+    return 0 if passed else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

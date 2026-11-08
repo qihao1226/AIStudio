@@ -1,63 +1,28 @@
-# 🎬 AIStudio: 云端多模态视频生产工场
+# 🏭 YOUAI Cloud Video Factory (`AIStudio` v3.0)
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1AIQX-pm291MjNLdZ2ravKVPxFIBo_KYA)
-[![GitHub License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![SOP Version](https://img.shields.io/badge/SOP-AG__SOP__04%20v1.0-green.svg)](docs/AG_SOP_04_全源素材重构与外挂多模态视频生产流水线SOP_v1.0.md)
+**Antigravity 云端视频工场 · 六大主力产线与三层持久化执行底座**
 
-> 基于 **Antigravity (云端智能中枢)** + **Google Colab (外挂多模态 GPU 车间)** + **Google Drive (统一物理总装货架)** 打造的全源素材重构与视频生产流水线。
+## 1. 快速唤醒底座（每个新会话第 0 步）
 
----
-
-## 🌟 核心理念与架构
-
-打破特定类型视频的狭窄局限，面向全品类（科技解说、商业拆解、卡点短视频、知识科普）：
-1. **双源素材汇流**：支持用户在 Google Drive 上传的原生素材（文档/录音/原片）与 Antigravity 全网自主嗅探搜集的高清素材；
-2. **差额按需制造**：基于分镜导演表自动分析缺失元素，生成《差额生产清单》（`gap_manifest.json`）；
-3. **Colab 外挂 GPU 车间**：
-   - 🎙️ 语音转写与字级时间戳：`faster-whisper`
-   - 🗣️ 零样本声音克隆与旁白：`F5-TTS` / `CosyVoice`
-   - 🎨 概念插图与视频封面：`FLUX.1-schnell` / `SDXL-Turbo`
-   - 🎬 专属动态空镜片段：`CogVideoX-2B` / `LTX-Video`
-4. **集中总装与代码动效编排**：全源素材齐套入库 `03_assets_hub/` 后，通过 `HyperFrames` / `Remotion` 实现广播级多轨道运镜动效渲染。
-
----
-
-## 📂 项目标准目录布局 (`AG_SOP_04`)
-
-```text
-AIStudio/
-├── docs/                                  # 工业级规约与 SOP 文档
-│   ├── AG_SOP_04_全源素材重构...SOP_v1.0.md
-│   └── templates/gap_manifest_template.json
-├── notebooks/                             # 专供 Colab 运行的外挂车间 Notebook
-│   └── colab_multimodal_worker.ipynb
-├── src/aistudio/                          # Antigravity 调度与流水线工具包
-│   ├── config.py                          # 目录与媒体规范
-│   ├── inventory.py                       # 原始素材全景扫描器
-│   ├── manifest.py                        # 差额生产清单构建与校验器
-│   ├── assembler.py                       # assets_hub 集中总装与门禁断言
-│   └── cli.py                             # 统一命令行接口
-└── tests/                                 # 单元测试与门禁验证
-```
-
----
-
-## 🚀 快速上手 (Quickstart)
-
-### 1. 本地初始化新项目
 ```bash
-PYTHONPATH=src python3 -m aistudio.cli init 20261107_demo
+/home/antigravity/qihao1226/AIStudio/scripts/bootstrap.sh
+export PATH="/home/antigravity/.local/bin:/shared/user/.gemini/youai/bin:$PATH"
 ```
 
-### 2. 扫描原始资产 (`01_raw_assets`)
-```bash
-PYTHONPATH=src python3 -m aistudio.cli scan projects/20261107_demo
-```
+## 2. 六大 SOP v3.0 极致执行手册索引 (`docs/sops/`)
 
-### 3. 一键启动 Colab 外挂多模态车间
-点击上方 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1AIQX-pm291MjNLdZ2ravKVPxFIBo_KYA) 按钮，挂载 Google Drive 后一键运行，即可自动监听并处理生成的差额清单任务。
+- **全局顶层蓝图**：[`docs/sops/00_顶层规划_v3.0.md`](docs/sops/00_顶层规划_v3.0.md)
+- **全景技术协议**：[`docs/sops/01_全景技术架构_v3.0.md`](docs/sops/01_全景技术架构_v3.0.md)
+- **`AG_SOP_01` 商业深度纪实视频线**：[`docs/sops/AG_SOP_01_v3.0.md`](docs/sops/AG_SOP_01_v3.0.md)
+- **`AG_SOP_02` 极速快闪大字动效线**：[`docs/sops/AG_SOP_02_v3.0.md`](docs/sops/AG_SOP_02_v3.0.md)
+- **`AG_SOP_03` 白板手绘与火柴人讲解线**：[`docs/sops/AG_SOP_03_v3.0.md`](docs/sops/AG_SOP_03_v3.0.md)
+- **`AG_SOP_04` 全源素材重构与外挂多模态车间**：[`docs/sops/AG_SOP_04_v3.0.md`](docs/sops/AG_SOP_04_v3.0.md)
+- **`AG_SOP_05` 工业口播伴侣动效线**：[`docs/sops/AG_SOP_05_v3.0.md`](docs/sops/AG_SOP_05_v3.0.md)
+- **`AG_SOP_06` 极客架构与概念演示线**：[`docs/sops/AG_SOP_06_v3.0.md`](docs/sops/AG_SOP_06_v3.0.md)
 
-### 4. 总装与机器门禁断言
-```bash
-PYTHONPATH=src python3 -m aistudio.cli assemble projects/20261107_demo
-```
+## 3. 核心工业 CLI 工具集 (`bin/`)
+
+已同步持久化至 `/shared/user/.gemini/youai/bin/` 与 `/home/antigravity/.local/bin/`：
+- **4层装配流水线**：`to_timeline` (`to_timeline.py`), `edl2film` (`edl2film.py`), `openfilm`
+- **多模态算力调度**：`colab` (内置 [`http_rpc.py`](scripts/patches/colab-cli/http_rpc.py) 纯 HTTPS 内核桥接), [`scripts/sop04_colab_orchestrator.py`](scripts/sop04_colab_orchestrator.py), [`scripts/colab_multimodal_worker.py`](scripts/colab_multimodal_worker.py)
+- **母带混音与门禁守门员**：`audio_bgm_mixer`, `film_gatekeeper`, `wallstreet-strip`, `motion_check`, `search_styles`, `beat_detector`, `wb`, `pen_motion`, `motionkit`, `face_occlusion_check`, `jacky-validate`, `cognitive_load_linter`

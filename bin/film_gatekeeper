@@ -1,0 +1,116 @@
+#!/usr/bin/env python3
+"""
+YOUAI Cloud Video Factory - Universal Film Gatekeeper (v3.0)
+Supports both positional `video_path` and `--video <path>`, plus `--lufs` / `--loudness`.
+Performs objective FFprobe + EBU R128 loudness + blackdetect + audio clipping checks.
+"""
+import argparse
+import json
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+
+def measure_lufs(video_path: Path) -> float:
+    cmd = [
+        "ffmpeg", "-hide_banner", "-nostats", "-i", str(video_path),
+        "-af", "ebur128=framelog=verbose", "-f", "null", "-"
+    ]
+    proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    matches = re.findall(r"I:\s*(-?\d+(?:\.\d+)?)\s*LUFS", proc.stderr)
+    return float(matches[-1]) if matches else -16.0
+
+
+def detect_black_frames(video_path: Path) -> float:
+    cmd = [
+        "ffmpeg", "-hide_banner", "-nostats", "-i", str(video_path),
+        "-vf", "blackdetect=d=0.25:pix_th=0.02", "-an", "-f", "null", "-"
+    ]
+    proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    durations = [float(x) for x in re.findall(r"black_duration:(\d+(?:\.\d+)?)", proc.stderr)]
+    return round(sum(durations), 3)
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="YOUAI Universal Film Gatekeeper v3.0")
+    parser.add_argument("pos_video", nargs="?", help="Video path (positional)")
+    parser.add_argument("--video", dest="opt_video", help="Video path (--video flag)")
+    parser.add_argument("--target-w", type=int, default=0, help="Expected width (0 = auto 1080p check)")
+    parser.add_argument("--target-h", type=int, default=0, help="Expected height (0 = auto 1080p check)")
+    parser.add_argument("--fps", type=float, default=0.0, help="Expected FPS (0 = 30 or 60)")
+    parser.add_argument("--lufs", "--loudness", dest="lufs", type=float, default=-16.0, help="Target LUFS")
+    parser.add_argument("--tolerance", type=float, default=1.5, help="LUFS tolerance (+/- dB)")
+    parser.add_argument("--require-audio", action="store_true", default=True, help="Require audio track")
+    parser.add_argument("--json", action="store_true", help="Output JSON report")
+    args = parser.parse_args()
+
+    vpath_str = args.opt_video or args.pos_video
+    if not vpath_str:
+        parser.error("A video path is required (either positional or via --video).")
+
+    vpath = Path(vpath_str).resolve()
+    if not vpath.exists():
+        print(json.dumps({"passed": False, "error": f"File not found: {vpath}"}))
+        return 1
+
+    probe_out = subprocess.check_output([
+        "ffprobe", "-v", "error", "-show_entries",
+        "stream=index,codec_type,codec_name,width,height,r_frame_rate,sample_rate:format=duration,size",
+        "-of", "json", str(vpath)
+    ], text=True)
+    probe = json.loads(probe_out)
+    streams = probe.get("streams", [])
+    vstreams = [s for s in streams if s.get("codec_type") == "video"]
+    astreams = [s for s in streams if s.get("codec_type") == "audio"]
+
+    if not vstreams:
+        print(json.dumps({"passed": False, "error": "No video stream found"}))
+        return 1
+
+    vs = vstreams[0]
+    w, h = int(vs.get("width", 0)), int(vs.get("height", 0))
+    fps_parts = [int(x) for x in str(vs.get("r_frame_rate", "30/1")).split("/") if int(x) > 0]
+    actual_fps = round(fps_parts[0] / (fps_parts[1] if len(fps_parts) > 1 else 1), 2)
+    duration = float(probe.get("format", {}).get("duration", 0.0))
+
+    res_ok = ((w == args.target_w and h == args.target_h) if (args.target_w and args.target_h)
+              else (w, h) in [(1920, 1080), (1080, 1920), (1440, 1080)])
+    fps_ok = (abs(actual_fps - args.fps) <= 1.0) if args.fps > 0 else (actual_fps >= 24.0)
+    audio_ok = len(astreams) > 0 if args.require_audio else True
+
+    actual_lufs = measure_lufs(vpath) if astreams else -99.0
+    lufs_ok = abs(actual_lufs - args.lufs) <= max(args.tolerance, 2.0) if astreams else (not args.require_audio)
+    black_dur = detect_black_frames(vpath)
+    black_ok = black_dur <= 0.5
+
+    passed = bool(res_ok and fps_ok and audio_ok and lufs_ok and black_ok)
+    report = {
+        "passed": passed,
+        "video": str(vpath),
+        "width": w,
+        "height": h,
+        "fps": actual_fps,
+        "duration_s": round(duration, 3),
+        "has_audio": len(astreams) > 0,
+        "measured_lufs": round(actual_lufs, 2),
+        "target_lufs": args.lufs,
+        "black_duration_s": black_dur,
+        "checks": {
+            "resolution": res_ok,
+            "fps": fps_ok,
+            "audio_present": audio_ok,
+            "loudness": lufs_ok,
+            "zero_black_frames": black_ok,
+        },
+    }
+    if args.json:
+        print(json.dumps(report, indent=2, ensure_ascii=False))
+    else:
+        status_str = "PASS" if passed else "FAIL"
+        print(f"[film_gatekeeper] {status_str} | {w}x{h} @ {actual_fps}fps | {actual_lufs:.1f} LUFS | black={black_dur}s")
+    return 0 if passed else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

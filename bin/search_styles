@@ -1,0 +1,56 @@
+#!/usr/bin/env python3
+"""
+YOUAI Cloud Video Factory - lemo-opuscar Cinema Color & Lighting Token Search CLI (v3.0)
+Provides instant retrieval of Oscar-winning cinema color palettes and lighting tokens.
+"""
+import json
+import sys
+
+STYLES = {
+    "spotlight": {
+        "name": "Spotlight (2015) — Investigative Journalism",
+        "bg_primary": "#0B0F19",
+        "bg_surface": "#1B2320",
+        "accent_primary": "#A0DCAF",
+        "accent_warn": "#FF9A50",
+        "text_primary": "#F4F6F8",
+        "text_muted": "#8A99AD",
+        "vignette": "radial-gradient(circle, rgba(11,15,25,0.15) 40%, rgba(5,8,14,0.88) 100%)",
+    },
+    "oppenheimer": {
+        "name": "Oppenheimer (2023) — Industrial Power & Physics",
+        "bg_primary": "#0D0B09",
+        "bg_surface": "#1C1612",
+        "accent_primary": "#FF9A50",
+        "accent_warn": "#FFD8A0",
+        "text_primary": "#FAF4EB",
+        "text_muted": "#A89882",
+        "vignette": "radial-gradient(circle, rgba(28,22,18,0.1) 35%, rgba(8,6,4,0.92) 100%)",
+    },
+    "social_network": {
+        "name": "The Social Network (2010) — Silicon Valley FinTech",
+        "bg_primary": "#0A0E17",
+        "bg_surface": "#141E30",
+        "accent_primary": "#38BDF8",
+        "accent_warn": "#F59E0B",
+        "text_primary": "#F8FAFC",
+        "text_muted": "#94A3B8",
+        "vignette": "radial-gradient(circle, rgba(20,30,48,0.15) 40%, rgba(6,10,18,0.9) 100%)",
+    },
+}
+
+
+def main() -> int:
+    query = " ".join(sys.argv[1:]).lower() if len(sys.argv) > 1 else "spotlight"
+    if "oppenheimer" in query or "power" in query or "energy" in query:
+        res = STYLES["oppenheimer"]
+    elif "social" in query or "tech" in query or "silicon" in query:
+        res = STYLES["social_network"]
+    else:
+        res = STYLES["spotlight"]
+    print(json.dumps(res, indent=2, ensure_ascii=False))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
