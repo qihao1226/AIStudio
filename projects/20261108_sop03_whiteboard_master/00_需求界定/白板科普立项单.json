@@ -1,0 +1,105 @@
+{
+  "project_name": "20261108_SOP03_复利与认知陷阱_极限压测",
+  "sop_id": "AG_SOP_03_v3.0",
+  "title": "为什么 90% 的人明明很努力，却掉进了“伪勤奋”陷阱？",
+  "topic_category": "认知心理学与个人成长方法论",
+  "target_duration_s": 37.58,
+  "resolution": {
+    "width": 1920,
+    "height": 1080,
+    "fps": 30
+  },
+  "cadence_contract": {
+    "target_cps": 3.14,
+    "tolerance_cps": 0.15,
+    "total_script_chars": 118,
+    "calculated_duration_s": 37.58,
+    "actual_cps": 3.140
+  },
+  "whiteboard_palette": {
+    "canvas_bg": "#FAF6EE",
+    "ink_black": "#2B2B2B",
+    "alert_red": "#D9381E",
+    "insight_blue": "#1E56A0",
+    "highlighter_yellow": "#FFE066"
+  },
+  "safe_bounds": {
+    "content_x": [120, 1800],
+    "content_y": [100, 840],
+    "subtitle_exclusive_y": [860, 1080]
+  },
+  "audio_specs": {
+    "target_lufs": -16.0,
+    "tolerance_lufs": 1.0,
+    "tracks": [
+      "Track 1: Primary Voiceover (清晰知性解说女声)",
+      "Track 2: Marker Drawing Foley (沙沙书写与翻页拟音)",
+      "Track 3: Acoustic Light BGM (尤克里里/轻灵木吉他)"
+    ]
+  },
+  "scenes_catalog": [
+    {
+      "scene_id": "01-intro",
+      "layout_model": "WB_L04",
+      "layout_name": "左画右解故事型",
+      "duration_s": 5.732,
+      "chars": 18,
+      "narration": "你每天忙到深夜，为什么却毫无长进？",
+      "visual_core": "疲惫火柴人坐在电脑前抓狂挠头，周围凌乱文件飞舞，右侧大字「努力的错觉」"
+    },
+    {
+      "scene_id": "02-trap",
+      "layout_model": "WB_L05",
+      "layout_name": "纵向漏斗/仓鼠轮型",
+      "duration_s": 5.732,
+      "chars": 18,
+      "narration": "因为你掉进了低水平重复的伪勤奋陷阱。",
+      "visual_core": "火柴人在巨大仓鼠滚轮内狂奔，标示「耗尽 99% 精力，位移 = 0」"
+    },
+    {
+      "scene_id": "03-contrast",
+      "layout_model": "WB_L02",
+      "layout_name": "左右天平对抗型",
+      "duration_s": 5.732,
+      "chars": 18,
+      "narration": "战术上的勤奋，永远掩盖不了战略的懒惰。",
+      "visual_core": "左右倾斜天平：左侧沉重灰色「战术假勤奋」，右侧轻浮朱红「战略真懒惰」"
+    },
+    {
+      "scene_id": "04-zones",
+      "layout_model": "WB_L01",
+      "layout_name": "三栏递进演进型",
+      "duration_s": 5.096,
+      "chars": 16,
+      "narration": "真正的成长，需要打破行动舒适区。",
+      "visual_core": "三同心圈层：机械舒适区 ➔ 焦虑恐慌区 ➔ 刻意学习区，宝蓝箭头穿透"
+    },
+    {
+      "scene_id": "05-matrix",
+      "layout_model": "WB_L06",
+      "layout_name": "四象限矩阵型",
+      "duration_s": 5.096,
+      "chars": 16,
+      "narration": "抓住两成核心难点，撬动八成突破。",
+      "visual_core": "2x2 杠杆矩阵：高难度×高价值右上象限暖黄高亮，标明「二八定律」"
+    },
+    {
+      "scene_id": "06-epiphany",
+      "layout_model": "WB_L03",
+      "layout_name": "中心辐射脑图型",
+      "duration_s": 4.459,
+      "chars": 14,
+      "narration": "从盲目苦干，升级为认知驱动。",
+      "visual_core": "火柴人昂首蜕变，头顶点亮金色大灯泡💡，辐射「目标穿透/借力杠杆/复利飞轮」"
+    },
+    {
+      "scene_id": "07-formula",
+      "layout_model": "WB_L08",
+      "layout_name": "公式结晶顿悟型",
+      "duration_s": 5.733,
+      "chars": 18,
+      "narration": "停止感动自己，让努力产生真正的复利！",
+      "visual_core": "火柴人登顶插旗，超大暖黄荧光框定格终极心法公式「真成长 = 深度思考 × 杠杆行动²」"
+    }
+  ]
+}

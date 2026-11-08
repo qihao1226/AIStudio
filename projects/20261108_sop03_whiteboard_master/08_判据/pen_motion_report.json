@@ -1,0 +1,9 @@
+{
+  "passed": true,
+  "video": "/home/antigravity/qihao1226/AIStudio/projects/20261108_sop03_whiteboard_master/交付成片/final_whiteboard_1080p.mp4",
+  "duration_s": 37.57,
+  "script_chars": 118,
+  "actual_cps": 3.141,
+  "expected_cps": 3.14,
+  "tolerance": 0.15
+}

@@ -1,0 +1,101 @@
+{
+  "project": "20261108_SOP03_复利与认知陷阱_极限压测",
+  "sop": "AG_SOP_03_v3.0",
+  "title": "为什么 90% 的人明明很努力，却掉进了“伪勤奋”陷阱？",
+  "total_duration_s": 37.580,
+  "fps": 30,
+  "resolution": [1920, 1080],
+  "scenes": [
+    {
+      "id": "01-intro",
+      "index": 1,
+      "layout_model": "WB_L04",
+      "layout_name": "左画右解故事型",
+      "start": 0.000,
+      "end": 5.732,
+      "duration": 5.732,
+      "chars": 18,
+      "cps": 3.140,
+      "narration": "你每天忙到深夜，为什么却毫无长进？",
+      "foley_action": "marker_scratch_fast + page_turn"
+    },
+    {
+      "id": "02-trap",
+      "index": 2,
+      "layout_model": "WB_L05",
+      "layout_name": "纵向漏斗/仓鼠轮型",
+      "start": 5.732,
+      "end": 11.464,
+      "duration": 5.732,
+      "chars": 18,
+      "cps": 3.140,
+      "narration": "因为你掉进了低水平重复的伪勤奋陷阱。",
+      "foley_action": "marker_squeak_circle + page_turn"
+    },
+    {
+      "id": "03-contrast",
+      "index": 3,
+      "layout_model": "WB_L02",
+      "layout_name": "左右天平对抗型",
+      "start": 11.464,
+      "end": 17.196,
+      "duration": 5.732,
+      "chars": 18,
+      "cps": 3.140,
+      "narration": "战术上的勤奋，永远掩盖不了战略的懒惰。",
+      "foley_action": "marker_scratch_heavy + page_turn"
+    },
+    {
+      "id": "04-zones",
+      "index": 4,
+      "layout_model": "WB_L01",
+      "layout_name": "三栏递进演进型",
+      "start": 17.196,
+      "end": 22.292,
+      "duration": 5.096,
+      "chars": 16,
+      "cps": 3.140,
+      "narration": "真正的成长，需要打破行动舒适区。",
+      "foley_action": "marker_arrow_strike + page_turn"
+    },
+    {
+      "id": "05-matrix",
+      "index": 5,
+      "layout_model": "WB_L06",
+      "layout_name": "四象限矩阵型",
+      "start": 22.292,
+      "end": 27.388,
+      "duration": 5.096,
+      "chars": 16,
+      "cps": 3.140,
+      "narration": "抓住两成核心难点，撬动八成突破。",
+      "foley_action": "marker_highlighter_sweep + page_turn"
+    },
+    {
+      "id": "06-epiphany",
+      "index": 6,
+      "layout_model": "WB_L03",
+      "layout_name": "中心辐射脑图型",
+      "start": 27.388,
+      "end": 31.847,
+      "duration": 4.459,
+      "chars": 14,
+      "cps": 3.140,
+      "narration": "从盲目苦干，升级为认知驱动。",
+      "foley_action": "marker_bulb_burst + page_turn"
+    },
+    {
+      "id": "07-formula",
+      "index": 7,
+      "layout_model": "WB_L08",
+      "layout_name": "公式结晶顿悟型",
+      "start": 31.847,
+      "end": 37.580,
+      "duration": 5.733,
+      "chars": 18,
+      "cps": 3.140,
+      "narration": "停止感动自己，让努力产生真正的复利！",
+      "foley_action": "marker_box_highlight_finale"
+    }
+  ]
+}
