@@ -1,0 +1,71 @@
+#!/usr/bin/env python3
+"""
+YOUAI Cloud Video Factory - Universal TTS Dual-Engine Router (tts_router v1.0)
+Intelligently routes voiceover requests without Colab dependency:
+  1. Primary: Gemini API TTS (24kHz studio broadcast quality, 30 voices)
+  2. Fallback: Piper Offline Neural TTS (100% local, 0 external network, speed-adjustable)
+"""
+import argparse
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+LOCAL_BIN = Path("/home/antigravity/.local/bin")
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="YOUAI Universal Local/API TTS Router")
+    parser.add_argument("--text", help="Text to speak")
+    parser.add_argument("--file", help="Text file to read")
+    parser.add_argument("--output", "-o", required=True, help="Output WAV path")
+    parser.add_argument("--engine", choices=["auto", "gemini", "piper"], default="auto", help="TTS Engine")
+    parser.add_argument("--voice", help="Voice name (Gemini: Puck/Charon/Fenrir/Aoede; Piper: huayan)")
+    parser.add_argument("--speed", type=float, default=1.0, help="Speaking speed multiplier (Piper)")
+    args = parser.parse_args()
+
+    text = ""
+    if args.text:
+        text = args.text
+    elif args.file:
+        text = Path(args.file).read_text(encoding="utf-8")
+    else:
+        text = sys.stdin.read()
+
+    text = text.strip()
+    if not text:
+        print("[tts_router] Error: Empty text", file=sys.stderr)
+        return 1
+
+    out_p = Path(args.output).resolve()
+    gemini_bin = str(LOCAL_BIN / "gemini_tts")
+    piper_bin = str(LOCAL_BIN / "local_voice_gen")
+
+    # Route 1: Try Gemini API TTS
+    if args.engine in ("auto", "gemini"):
+        voice = args.voice or "Charon"
+        print(f"[tts_router] Attempting Gemini API TTS (voice={voice})...")
+        cmd = [gemini_bin, "--text", text, "-o", str(out_p), "--voice", voice]
+        res = subprocess.run(cmd)
+        if res.returncode == 0 and out_p.exists() and out_p.stat().st_size > 0:
+            print(f"[tts_router] ✅ Gemini API TTS generated successfully -> {out_p}")
+            return 0
+        if args.engine == "gemini":
+            print("[tts_router] ❌ Gemini API TTS failed and engine is locked to gemini", file=sys.stderr)
+            return 1
+        print("[tts_router] ⚠️ Gemini API TTS unavailable or network dropped; falling back to offline Piper...")
+
+    # Route 2: Offline Piper Neural TTS
+    print(f"[tts_router] Executing offline Piper Neural TTS (speed={args.speed})...")
+    cmd = [piper_bin, "--text", text, "-o", str(out_p), "--speed", str(args.speed)]
+    res = subprocess.run(cmd)
+    if res.returncode == 0 and out_p.exists() and out_p.stat().st_size > 0:
+        print(f"[tts_router] ✅ Piper Offline TTS generated successfully -> {out_p}")
+        return 0
+
+    print("[tts_router] ❌ All TTS engines failed", file=sys.stderr)
+    return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

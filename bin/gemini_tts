@@ -1,0 +1,107 @@
+#!/usr/bin/env python3
+"""
+YOUAI Cloud Video Factory - Official Gemini API TTS CLI (gemini_tts v1.0)
+High-fidelity cloud TTS via Google Gemini 2.5 / 3.8 Flash Speech Generation API.
+Supports 30 official voices (Puck, Charon, Aoede, Fenrir, Kore, Zephyr, etc.).
+Outputs broadcast-grade 24kHz PCM WAV.
+"""
+import argparse
+import base64
+import json
+import os
+import subprocess
+import sys
+import tempfile
+import urllib.request
+from pathlib import Path
+
+DEFAULT_KEY = "AIzaSyA3isYC85Wh3ICJgMED2WTkC5onbiMHpSU"
+MODEL_NAME = "gemini-2.5-flash-preview-tts"
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="YOUAI Gemini Cloud TTS (24kHz Studio Speech)")
+    parser.add_argument("--text", help="Text to speak")
+    parser.add_argument("--file", help="Text file to read")
+    parser.add_argument("--output", "-o", required=True, help="Output WAV path")
+    parser.add_argument("--voice", default="Puck", help="Gemini voice name (default: Puck, or Charon, Fenrir, Kore, Aoede, etc.)")
+    parser.add_argument("--key", help="Gemini API Key (optional, defaults to environment or internal key)")
+    args = parser.parse_args()
+
+    text = ""
+    if args.text:
+        text = args.text
+    elif args.file:
+        text = Path(args.file).read_text(encoding="utf-8")
+    else:
+        text = sys.stdin.read()
+
+    text = text.strip()
+    if not text:
+        print("[gemini_tts] Error: Empty text input", file=sys.stderr)
+        return 1
+
+    api_key = args.key or os.environ.get("GEMINI_API_KEY") or DEFAULT_KEY
+    out_p = Path(args.output).resolve()
+    out_p.parent.mkdir(parents=True, exist_ok=True)
+
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL_NAME}:generateContent?key={api_key}"
+    payload = {
+        "contents": [{"parts": [{"text": text}]}],
+        "generationConfig": {
+            "responseModalities": ["AUDIO"],
+            "speechConfig": {
+                "voiceConfig": {
+                    "prebuiltVoiceConfig": {
+                        "voiceName": args.voice
+                    }
+                }
+            }
+        }
+    }
+
+    req = urllib.request.Request(
+        url,
+        data=json.dumps(payload).encode("utf-8"),
+        headers={"Content-Type": "application/json"}
+    )
+
+    try:
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            cand = data.get("candidates", [{}])[0]
+            part = cand.get("content", {}).get("parts", [{}])[0]
+            b64_audio = part.get("inlineData", {}).get("data")
+            if not b64_audio:
+                print(f"[gemini_tts] Error: No audio in response: {data}", file=sys.stderr)
+                return 1
+
+            raw_bytes = base64.b64decode(b64_audio)
+            with tempfile.NamedTemporaryFile(suffix=".raw", delete=False) as tf:
+                tf.write(raw_bytes)
+                raw_path = tf.name
+
+            # Convert 24kHz raw PCM s16le to standard RIFF WAV
+            res = subprocess.run([
+                "ffmpeg", "-y", "-loglevel", "error",
+                "-f", "s16le", "-ar", "24000", "-ac", "1",
+                "-i", raw_path,
+                "-ar", "24000", "-ac", "1",
+                str(out_p)
+            ])
+            Path(raw_path).unlink(missing_ok=True)
+
+            if res.returncode == 0 and out_p.exists() and out_p.stat().st_size > 0:
+                print(f"[gemini_tts] Success -> {out_p} ({out_p.stat().st_size} bytes, voice={args.voice})")
+                return 0
+            else:
+                print("[gemini_tts] FFmpeg packaging failed", file=sys.stderr)
+                return 1
+
+    except Exception as e:
+        print(f"[gemini_tts] API request failed: {e}", file=sys.stderr)
+        return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
