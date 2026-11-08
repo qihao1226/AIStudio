@@ -1,0 +1,157 @@
+#!/usr/bin/env python3
+"""
+YOUAI Cloud Video Factory — `minimax_h3_colab` CLI (v3.0)
+=========================================================
+End-to-end orchestrator for running MiniMax-H3 (Ref2VA & FL2VA Video + 32kHz Stereo Audio)
+on Google Colab A100 / L4 / G4 GPUs via our Pure-HTTP RPC Bridge.
+"""
+
+import argparse
+import json
+import os
+import subprocess
+import sys
+import tempfile
+import time
+from pathlib import Path
+
+REPO_ROOT = Path("/home/antigravity/qihao1226/AIStudio")
+REMOTE_WORKER = REPO_ROOT / "scripts" / "colab_minimax_h3_worker.py"
+COLAB_BIN = "/home/antigravity/.local/bin/colab"
+
+
+def run_colab(args: list, timeout: int = 300, check: bool = True) -> str:
+    env = dict(os.environ, PATH=f"/home/antigravity/.local/bin:/shared/user/.gemini/youai/bin:{os.environ.get('PATH', '')}")
+    p = subprocess.run(
+        [COLAB_BIN, *map(str, args)],
+        capture_output=True,
+        text=True,
+        env=env,
+        timeout=timeout,
+        stdin=subprocess.DEVNULL,
+    )
+    out = (p.stdout or "") + (p.stderr or "")
+    if check and p.returncode != 0:
+        raise RuntimeError(f"colab {' '.join(map(str, args))} failed ({p.returncode}):\n{out[-1500:]}")
+    return out
+
+
+def exec_py(session: str, code: str, timeout: int = 90) -> str:
+    with tempfile.NamedTemporaryFile("w", suffix=".py", delete=False, encoding="utf-8") as f:
+        f.write(code)
+        tmp_name = f.name
+    try:
+        return run_colab(["exec", "-s", session, "-f", tmp_name, "--timeout", str(timeout)], timeout=timeout + 30)
+    finally:
+        Path(tmp_name).unlink(missing_ok=True)
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description="YOUAI Colab A100/L4 MiniMax-H3 Video+Audio Orchestrator")
+    ap.add_argument("--image", action="append", required=True, help="1-9 reference images (or 1 first_frame image)")
+    ap.add_argument("--prompt-file", help="Path to UTF-8 structured H3 prompt file")
+    ap.add_argument("--prompt", help="Inline structured H3 prompt string")
+    ap.add_argument("--output", required=True, help="Local output MP4 file path")
+    ap.add_argument("--mode", choices=["reference", "first_frame"], default="reference")
+    ap.add_argument("--width", type=int, default=960)
+    ap.add_argument("--height", type=int, default=544)
+    ap.add_argument("--duration", type=float, default=5.0)
+    ap.add_argument("--steps", type=int, default=4)
+    ap.add_argument("--seed", type=int, default=20261108)
+    ap.add_argument("--gpu", choices=["A100", "L4", "G4", "H100"], default="A100")
+    ap.add_argument("--session", default="youai-h3-a100")
+    ap.add_argument("--stop-after", action="store_true", help="Stop Colab GPU session immediately after completion")
+    args = ap.parse_args()
+
+    prompt_text = Path(args.prompt_file).read_text(encoding="utf-8") if args.prompt_file else (args.prompt or "")
+    if not prompt_text.strip():
+        raise ValueError("Provide --prompt-file or --prompt")
+
+    print(f"[minimax_h3_colab] Checking Colab quota & active sessions...", flush=True)
+    sessions_out = run_colab(["sessions"], check=False)
+    if args.session not in sessions_out:
+        print(f"[minimax_h3_colab] Allocating {args.gpu} High-RAM session '{args.session}'...", flush=True)
+        cmd = ["new", "-s", args.session, "--gpu", args.gpu]
+        if args.gpu == "A100":
+            cmd.append("--high-mem")
+        run_colab(cmd, timeout=600)
+    else:
+        print(f"[minimax_h3_colab] Reusing active session '{args.session}'", flush=True)
+
+    try:
+        exec_py(args.session, "import os; os.makedirs('/content/h3_job/inputs', exist_ok=True); print('READY')")
+        run_colab(["upload", "-s", args.session, str(REMOTE_WORKER), "/content/h3_job/colab_minimax_h3_worker.py"])
+
+        remote_imgs = []
+        for idx, img_p in enumerate(args.image, 1):
+            p = Path(img_p).resolve()
+            r_rel = f"inputs/ref_{idx:02d}{p.suffix}"
+            run_colab(["upload", "-s", args.session, str(p), f"/content/h3_job/{r_rel}"])
+            remote_imgs.append(r_rel)
+
+        manifest = {
+            "jobs": [
+                {
+                    "id": "clip_01",
+                    "mode": args.mode,
+                    "images": remote_imgs,
+                    "prompt": prompt_text,
+                    "width": args.width,
+                    "height": args.height,
+                    "duration_seconds": args.duration,
+                    "steps": args.steps,
+                    "seed": args.seed,
+                }
+            ]
+        }
+        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8") as mf:
+            json.dump(manifest, mf, ensure_ascii=False, indent=2)
+            mf_path = mf.name
+        run_colab(["upload", "-s", args.session, mf_path, "/content/h3_job/manifest.json"])
+        Path(mf_path).unlink(missing_ok=True)
+
+        launch_code = (
+            "import subprocess, sys, json\n"
+            "p = subprocess.Popen([sys.executable, '/content/h3_job/colab_minimax_h3_worker.py'], "
+            "cwd='/content/h3_job', stdout=open('/content/h3_job/worker.log', 'w'), "
+            "stderr=subprocess.STDOUT, start_new_session=True)\n"
+            "print(json.dumps({'started': True, 'pid': p.pid}))\n"
+        )
+        print(exec_py(args.session, launch_code).strip(), flush=True)
+
+        poll_code = (
+            "import json\nfrom pathlib import Path\n"
+            "p = Path('/content/h3_job/status.json')\n"
+            "print('H3_STATUS:' + (p.read_text() if p.exists() else '{}'))\n"
+        )
+        last_log = ""
+        while True:
+            time.sleep(15)
+            out = exec_py(args.session, poll_code)
+            if "H3_STATUS:" not in out:
+                continue
+            st = json.loads(out.split("H3_STATUS:", 1)[1].strip() or "{}")
+            logs = st.get("logs", [])
+            if logs and logs[-1] != last_log:
+                print(f"  {logs[-1]}", flush=True)
+                last_log = logs[-1]
+            if st.get("done"):
+                if st.get("error"):
+                    raise RuntimeError(f"Remote H3 worker error:\n{st['error']}")
+                job_res = st.get("jobs", {}).get("clip_01", {})
+                if job_res.get("status") != "done":
+                    raise RuntimeError(f"Job clip_01 failed: {job_res}")
+                out_path = Path(args.output).resolve()
+                out_path.parent.mkdir(parents=True, exist_ok=True)
+                run_colab(["download", "-s", args.session, "/content/h3_job/out/clip_01.mp4", str(out_path)], timeout=600)
+                print(f"[minimax_h3_colab] ✅ Downloaded MP4 -> {out_path} ({out_path.stat().st_size / 2**20:.2f} MiB)", flush=True)
+                break
+    finally:
+        if args.stop_after:
+            print(f"[minimax_h3_colab] Stopping session '{args.session}' to save Compute Units...", flush=True)
+            run_colab(["stop", "-s", args.session], check=False)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
