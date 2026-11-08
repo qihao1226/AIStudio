@@ -18,9 +18,8 @@
 export PATH="/home/antigravity/.local/bin:/shared/user/.gemini/youai/bin:$PATH"
 ```
 
-> **【红线避坑：StaticGuard CSS Transform 与 GSAP 零冲突铁律】**
-> 历史实测（`task-145.log`）暴露出最常见的快闪排版崩坏根源：在 CSS 中写了 `transform: translateX(-50%) translateY(30px)` 居中，同时又用 GSAP `gsap.to(el, {y: 0})` 动画，导致 GSAP 覆盖整个 `transform` 矩阵，元素瞬间偏离屏幕中心！
-> **v3.0 强制规定**：
+> **【红线避坑：算力解耦原则 + StaticGuard CSS Transform 与 GSAP 零冲突铁律】**
+> 0. **【算力边界】本产线（SOP 02）是纯代码级排版与音频脉冲驱动的极速产线，100% 在 Antigravity 本地闭环完成，严禁调用 Colab GPU！**
 > 1. 所有屏幕居中必须使用 **Flexbox / Grid 容器居中**（`display: flex; align-items: center; justify-content: center;`），**严禁使用 `left: 50%; transform: translateX(-50%)` 居中**！
 > 2. 所有位移、缩放、微震必须 100% 通过时间函数 `frame(t)` 或 GSAP 独立属性控制。
 

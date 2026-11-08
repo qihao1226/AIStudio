@@ -18,9 +18,8 @@
 export PATH="/home/antigravity/.local/bin:/shared/user/.gemini/youai/bin:$PATH"
 ```
 
-> **【红线禁令：零豆腐块乱码铁律 (Zero-Tofu Glyph Policy)】**
-> 在前期测试片（`20261107_分布式微服务Saga事务架构深度拆解_v1`）中，画面标题出现了 `☒ 100,000 QPS` 方块乱码，原因是 Linux 无头渲染环境遇到未配置彩文字体的裸 Unicode Emoji（如 `⚡`、`🔥`、`🚀`）时会回退为缺失字形框 `☒`！
-> **v3.0 强制规定**：
+> **【红线禁令：算力解耦原则 + 零豆腐块乱码铁律 (Zero-Tofu Glyph Policy)】**
+> 0. **【算力边界】本产线（SOP 06）是基于 `Jacky-motion 2.1` 单文件 HTML5/SVG 的极客代码与架构推演产线，100% 在 Antigravity 本地闭环完成，严禁调用 Colab GPU！**
 > 1. **严禁在 HTML/Canvas 中裸写 `⚡🔥🚀💡✅❌` 等 Emoji 字符**！所有闪电、服务器、数据库、警告、勾选图标，**必须 100% 使用内联 `<svg>` 矢量路径或纯几何 CSS 徽标**！
 > 2. 所有代码区必须显式声明字体栈：`font-family: 'JetBrains Mono', 'Fira Code', 'DejaVu Sans Mono', monospace;`；所有中文说明区必须显式声明：`font-family: 'Noto Sans CJK SC', 'Source Han Sans SC', sans-serif;`。
 > 3. 渲染前必须通过 `cognitive_load_linter` 的 `zero_tofu_emoji_risk` 门禁检查！

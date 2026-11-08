@@ -18,8 +18,9 @@
 export PATH="/home/antigravity/.local/bin:/shared/user/.gemini/youai/bin:$PATH"
 ```
 
-> **【v3.0 强制合规配置：默认关闭 `adu-motion-video` 成片强制角标】**
-> `adu-motion-video` v3.14.1 默认会在右上角注入引擎签名水印。根据工场统一政策，**必须在项目工程根目录写入 `output-signature.json` 显式关闭角标**：
+> **【v3.0 强制合规配置：算力解耦原则与默认角标关闭政策】**
+> 1. **【算力边界】本产线（SOP 05）的核心是 `adu-motion-video` 伴侣动效挂载与人脸避障，默认 100% 在 Antigravity 本地基于已有口播源片闭环完成，不绑定 Colab GPU**（仅当无现成口播视频、用户明确要求用 AI 生成虚拟主播口播轨时，才按需调用 Colab `MiniMax-H3`）。
+> 2. `adu-motion-video` v3.14.1 默认会在右上角注入引擎签名水印。根据工场统一政策，**必须在项目工程根目录写入 `output-signature.json` 显式关闭角标**：
 > ```json
 > {"enabled": false}
 > ```
