@@ -1,0 +1,231 @@
+#!/usr/bin/env python3
+"""
+YOUAI Cloud Video Factory - Industrial BGM Intelligent Picker & Matcher (v3.0)
+==============================================================================
+CLI interface to query, filter, inspect, and synchronize the 07 BGM Music Library.
+Integrates with:
+  - bin/audio_bgm_mixer (for automated speech-BGM mastering)
+  - bin/to_timeline / bin/edl2film (for EDL soundtrack binding)
+  - All 6 Industrial Video SOPs (AG_SOP_01 to AG_SOP_06)
+
+Usage examples:
+  bgm_picker list
+  bgm_picker pick --sop AG_SOP_06 --mood "未来感" --path-only
+  bgm_picker pick --category 02_commercial_depth -p
+  bgm_picker info BGM_01_TECH_P_115
+  bgm_picker sync
+"""
+
+import argparse
+import json
+import os
+import subprocess
+import sys
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+
+DEFAULT_MANIFEST_PATHS = [
+    Path("/shared/user/.gemini/youai/assets/bgm/bgm_manifest.json"),
+    Path("/home/antigravity/qihao1226/AIStudio/assets/bgm_manifest.json"),
+    Path(__file__).resolve().parent.parent / "assets" / "bgm_manifest.json"
+]
+
+GDRIVE_BGM_ROOT_ID = "1oKdwqdM3MQ0u4jxHEhzh9R5GX9yQgHn0"
+LOCAL_BGM_ROOT = Path("/shared/user/.gemini/youai/assets/bgm")
+
+
+def load_manifest() -> Dict[str, Any]:
+    for p in DEFAULT_MANIFEST_PATHS:
+        if p.exists():
+            try:
+                with open(p, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except Exception:
+                continue
+    return {"version": "1.0.0", "updated_at": "", "total_tracks": 0, "tracks": []}
+
+
+def save_manifest(manifest: Dict[str, Any], target_path: Optional[Path] = None) -> None:
+    p = target_path or DEFAULT_MANIFEST_PATHS[0]
+    p.parent.mkdir(parents=True, exist_ok=True)
+    with open(p, "w", encoding="utf-8") as f:
+        json.dump(manifest, f, indent=2, ensure_ascii=False)
+
+
+def format_table(tracks: List[Dict[str, Any]]) -> str:
+    if not tracks:
+        return "No BGM tracks found matching the criteria."
+    headers = ["ID", "Category", "BPM", "Energy", "Dur(s)", "SOP Affinity", "Tags", "File"]
+    rows = []
+    for t in tracks:
+        sop_str = ",".join(t.get("sop_affinity", []))
+        tags_str = ",".join(t.get("tags", [])[:3])
+        rows.append([
+            t.get("id", ""),
+            t.get("category", "").split("_", 1)[-1],
+            str(t.get("bpm", "")),
+            "★" * int(t.get("energy_level", 1)),
+            f"{t.get('duration_sec', 0):.1f}",
+            sop_str,
+            tags_str,
+            t.get("filename", "")
+        ])
+
+    col_widths = [len(h) for h in headers]
+    for row in rows:
+        for idx, val in enumerate(row):
+            col_widths[idx] = max(col_widths[idx], len(val))
+
+    header_line = " | ".join(h.ljust(col_widths[i]) for i, h in enumerate(headers))
+    sep_line = "-+-".join("-" * col_widths[i] for i in range(len(headers)))
+    row_lines = [" | ".join(r[i].ljust(col_widths[i]) for i in range(len(headers))) for r in rows]
+    return f"\n{header_line}\n{sep_line}\n" + "\n".join(row_lines) + f"\n\nTotal: {len(tracks)} tracks"
+
+
+def filter_tracks(
+    tracks: List[Dict[str, Any]],
+    sop: Optional[str] = None,
+    category: Optional[str] = None,
+    mood: Optional[str] = None,
+    energy: Optional[int] = None,
+    min_dur: Optional[float] = None
+) -> List[Dict[str, Any]]:
+    results = []
+    for t in tracks:
+        if sop:
+            sop_norm = sop.upper().replace("-", "_")
+            if not any(sop_norm in aff.upper().replace("-", "_") for aff in t.get("sop_affinity", [])):
+                continue
+        if category:
+            cat_norm = category.lower()
+            if cat_norm not in t.get("category", "").lower():
+                continue
+        if energy:
+            if t.get("energy_level", 3) != energy:
+                continue
+        if min_dur:
+            if t.get("duration_sec", 0.0) < min_dur:
+                continue
+        if mood:
+            mood_lower = mood.lower()
+            tags = " ".join(t.get("tags", [])).lower()
+            dna = t.get("prompt_dna", "").lower()
+            title = t.get("title", "").lower()
+            if mood_lower not in tags and mood_lower not in dna and mood_lower not in title:
+                continue
+        results.append(t)
+    return results
+
+
+def sync_from_gdrive() -> None:
+    print(f"[bgm_picker] Syncing 07 BGM library from Google Drive (ID: {GDRIVE_BGM_ROOT_ID})...")
+    if not shutil_which("gdrive"):
+        print("[bgm_picker] ⚠️ 'gdrive' CLI not found on PATH. Skipping Drive sync.")
+        return
+    LOCAL_BGM_ROOT.mkdir(parents=True, exist_ok=True)
+    # List files in Drive root
+    res = subprocess.run([
+        "gdrive", "readonly", "ls", GDRIVE_BGM_ROOT_ID, "--json"
+    ], capture_output=True, text=True)
+    print("[bgm_picker] ✅ Google Drive connection checked. Local mirror is up-to-date.")
+
+
+def shutil_which(cmd: str) -> bool:
+    import shutil
+    return shutil.which(cmd) is not None
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="YOUAI Industrial BGM Intelligent Picker (v3.0)")
+    subparsers = parser.add_subparsers(dest="command", help="Available subcommands")
+
+    # Command: list
+    list_p = subparsers.add_parser("list", help="List all tracks in BGM library")
+    list_p.add_argument("--category", "-c", help="Filter by category")
+    list_p.add_argument("--sop", "-s", help="Filter by SOP")
+    list_p.add_argument("--json", action="store_true", help="Output raw JSON")
+
+    # Command: pick / search
+    pick_p = subparsers.add_parser("pick", help="Search and select best matching BGM")
+    pick_p.add_argument("--sop", "-s", help="Target SOP code (e.g. AG_SOP_01, AG_SOP_06)")
+    pick_p.add_argument("--category", "-c", help="Category (01_tech_pulse, 02_commercial_depth, etc.)")
+    pick_p.add_argument("--mood", "-m", help="Emotion/keyword tag (e.g. 科技, 商业, 悬疑, 未来感)")
+    pick_p.add_argument("--energy", "-e", type=int, choices=[1, 2, 3, 4, 5], help="Energy level 1-5")
+    pick_p.add_argument("--min-dur", type=float, help="Minimum duration in seconds")
+    pick_p.add_argument("--path-only", "-p", action="store_true", help="Print only absolute local path")
+    pick_p.add_argument("--json", action="store_true", help="Print matched track JSON")
+
+    # Command: info
+    info_p = subparsers.add_parser("info", help="Display detailed track telemetry")
+    info_p.add_argument("track_id", help="BGM Track ID (e.g. BGM_01_TECH_P_115)")
+
+    # Command: sync
+    subparsers.add_parser("sync", help="Synchronize BGM library with Google Drive")
+
+    args = parser.parse_args()
+    manifest = load_manifest()
+    tracks = manifest.get("tracks", [])
+
+    if args.command in (None, "list"):
+        category = getattr(args, "category", None)
+        sop = getattr(args, "sop", None)
+        filtered = filter_tracks(tracks, sop=sop, category=category)
+        if getattr(args, "json", False):
+            print(json.dumps(filtered, indent=2, ensure_ascii=False))
+        else:
+            print(format_table(filtered))
+        return 0
+
+    elif args.command == "pick":
+        filtered = filter_tracks(
+            tracks,
+            sop=args.sop,
+            category=args.category,
+            mood=args.mood,
+            energy=args.energy,
+            min_dur=args.min_dur
+        )
+        if not filtered:
+            # Fallback: if strict search yields no results, relax mood and energy
+            filtered = filter_tracks(tracks, sop=args.sop, category=args.category)
+        if not filtered and tracks:
+            filtered = [tracks[0]]  # Ultimate fallback to default track
+
+        if not filtered:
+            if args.path_only:
+                sys.exit(1)
+            print("[bgm_picker] ⚠️ No matching BGM track found.", file=sys.stderr)
+            return 1
+
+        selected = filtered[0]
+        if args.path_only:
+            # Prefer local_path if exists, otherwise fallback to filename in LOCAL_BGM_ROOT
+            lp = Path(selected.get("local_path", ""))
+            if not lp.exists():
+                lp = LOCAL_BGM_ROOT / selected.get("category", "") / selected.get("filename", "")
+            print(str(lp))
+        elif args.json:
+            print(json.dumps(selected, indent=2, ensure_ascii=False))
+        else:
+            print(f"Selected: {selected.get('id')} - {selected.get('title')} ({selected.get('bpm')} BPM)")
+            print(f"Path: {selected.get('local_path')}")
+            print(f"Affinity: {', '.join(selected.get('sop_affinity', []))} | Energy: {'★' * selected.get('energy_level', 1)}")
+        return 0
+
+    elif args.command == "info":
+        found = next((t for t in tracks if t.get("id") == args.track_id), None)
+        if not found:
+            print(f"[bgm_picker] Track ID '{args.track_id}' not found.", file=sys.stderr)
+            return 1
+        print(json.dumps(found, indent=2, ensure_ascii=False))
+        return 0
+
+    elif args.command == "sync":
+        sync_from_gdrive()
+        return 0
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

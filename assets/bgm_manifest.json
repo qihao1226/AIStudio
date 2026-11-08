@@ -1,0 +1,144 @@
+{
+  "version": "1.0.0",
+  "updated_at": "2026-11-08T16:15:10Z",
+  "tracks": [
+    {
+      "id": "BGM_01_TECH_PU_115",
+      "filename": "tech_neural_pulse_115bpm.wav",
+      "category": "01_tech_pulse",
+      "title": "Tech Pulse Theme",
+      "tags": [
+        "AI",
+        "未来感",
+        "深沉科技",
+        "算力架构",
+        "极客演示"
+      ],
+      "sop_affinity": [
+        "AG_SOP_06",
+        "AG_SOP_04",
+        "AG_SOP_01"
+      ],
+      "duration_sec": 32.0,
+      "bpm": 100.0,
+      "energy_level": 3,
+      "climax_sec": [
+        16.0
+      ],
+      "loopable": true,
+      "loudness_lufs": -16.0,
+      "local_path": "/shared/user/.gemini/youai/assets/bgm/01_tech_pulse/tech_neural_pulse_115bpm.wav",
+      "prompt_dna": "futuristic modular synth pulse, warm analog moog bass, deep sub bass, tech documentary, clean electronic groove, modern AI keynote, 48kHz pristine studio recording, no vocals"
+    },
+    {
+      "id": "BGM_02_COMMERC_88",
+      "filename": "commercial_wallstreet_depth_88bpm.wav",
+      "category": "02_commercial_depth",
+      "title": "Commercial Depth Theme",
+      "tags": [
+        "商业深度",
+        "资本博弈",
+        "巨头传记",
+        "纪实大片",
+        "冷峻悬疑"
+      ],
+      "sop_affinity": [
+        "AG_SOP_01",
+        "AG_SOP_04"
+      ],
+      "duration_sec": 32.0,
+      "bpm": 100.0,
+      "energy_level": 2,
+      "climax_sec": [
+        16.0
+      ],
+      "loopable": true,
+      "loudness_lufs": -16.0,
+      "local_path": "/shared/user/.gemini/youai/assets/bgm/02_commercial_depth/commercial_wallstreet_depth_88bpm.wav",
+      "prompt_dna": "cinematic modern cello and piano, subtle minimalist tension, dark suspense strings, Wall Street finance documentary, prestigious corporate storytelling, premium acoustic production, no vocals"
+    },
+    {
+      "id": "BGM_03_KNOWLED_92",
+      "filename": "knowledge_flow_minimal_92bpm.wav",
+      "category": "03_knowledge_flow",
+      "title": "Knowledge Flow Theme",
+      "tags": [
+        "知识白板",
+        "心流干货",
+        "温和治愈",
+        "理性极简",
+        "口播伴侣"
+      ],
+      "sop_affinity": [
+        "AG_SOP_03",
+        "AG_SOP_05"
+      ],
+      "duration_sec": 32.0,
+      "bpm": 100.0,
+      "energy_level": 1,
+      "climax_sec": [
+        16.0
+      ],
+      "loopable": true,
+      "loudness_lufs": -16.0,
+      "local_path": "/shared/user/.gemini/youai/assets/bgm/03_knowledge_flow/knowledge_flow_minimal_92bpm.wav",
+      "prompt_dna": "warm rhodes electric piano, gentle acoustic felt piano, lofi productivity ambient, soft vinyl texture, deep cognitive focus, smooth study beats, calm explainer background, no vocals"
+    },
+    {
+      "id": "BGM_04_KINETIC_128",
+      "filename": "kinetic_impact_stabs_128bpm.wav",
+      "category": "04_kinetic_punch",
+      "title": "Kinetic Punch Theme",
+      "tags": [
+        "快闪大字",
+        "反常识暴击",
+        "高能转折",
+        "重音卡点",
+        "多巴胺留存"
+      ],
+      "sop_affinity": [
+        "AG_SOP_02",
+        "AG_SOP_04"
+      ],
+      "duration_sec": 32.0,
+      "bpm": 100.0,
+      "energy_level": 5,
+      "climax_sec": [
+        16.0
+      ],
+      "loopable": true,
+      "loudness_lufs": -16.0,
+      "local_path": "/shared/user/.gemini/youai/assets/bgm/04_kinetic_punch/kinetic_impact_stabs_128bpm.wav",
+      "prompt_dna": "heavy hybrid kick stabs, tight rhythmic brass hits, aggressive bass pulse, intense hype beat, high energy trailer impact, punchy modern advertising groove, no vocals"
+    },
+    {
+      "id": "BGM_05_EPIC_BR_105",
+      "filename": "epic_breakthrough_hybrid_105bpm.wav",
+      "category": "05_epic_breakthrough",
+      "title": "Epic Breakthrough Theme",
+      "tags": [
+        "科技史诗",
+        "重大突破",
+        "文明里程碑",
+        "产业革新",
+        "振奋升华"
+      ],
+      "sop_affinity": [
+        "AG_SOP_01",
+        "AG_SOP_06",
+        "AG_SOP_02"
+      ],
+      "duration_sec": 32.0,
+      "bpm": 100.0,
+      "energy_level": 4,
+      "climax_sec": [
+        16.0
+      ],
+      "loopable": true,
+      "loudness_lufs": -16.0,
+      "local_path": "/shared/user/.gemini/youai/assets/bgm/05_epic_breakthrough/epic_breakthrough_hybrid_105bpm.wav",
+      "prompt_dna": "inspiring hybrid orchestral swell, uplifting cinematic crescendo, soaring horns, driving percussion, heroic technological revolution, monumental milestone ending, no vocals"
+    }
+  ],
+  "total_tracks": 5
+}

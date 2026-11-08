@@ -36,6 +36,9 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="YOUAI Multi-Track Audio Mixer v3.5")
     parser.add_argument("--voice", required=True, help="Primary voiceover WAV/MP3")
     parser.add_argument("--bgm", required=False, default=None, help="Background music track")
+    parser.add_argument("--auto-bgm", action="store_true", help="Automatically pick BGM using bgm_picker based on --sop and --mood")
+    parser.add_argument("--sop", required=False, default=None, help="SOP identifier for auto BGM matching (e.g. AG_SOP_01)")
+    parser.add_argument("--mood", required=False, default=None, help="Mood/tag keyword for auto BGM matching")
     parser.add_argument("--no-bgm", action="store_true", help="Explicitly mute BGM (Pure voiceover + authentic Foley)")
     parser.add_argument("--foley", required=False, help="Optional foley track (e.g. authentic paper friction)")
     parser.add_argument("--output", "-o", required=True, help="Output mastered WAV/MP3")
@@ -61,12 +64,29 @@ def main() -> int:
         mix_inputs.append("[f]")
         idx += 1
 
+    # Auto-resolve BGM via bgm_picker if requested
+    bgm_path = Path(args.bgm) if args.bgm else None
+    if (args.auto_bgm or (bgm_path is None and not args.no_bgm and (args.sop or args.mood))):
+        picker_cmd = ["bgm_picker", "pick", "-p"]
+        if args.sop:
+            picker_cmd.extend(["--sop", args.sop])
+        if args.mood:
+            picker_cmd.extend(["--mood", args.mood])
+        try:
+            picker_res = subprocess.run(picker_cmd, capture_output=True, text=True, check=True)
+            candidate = Path(picker_res.stdout.strip())
+            if candidate.exists():
+                bgm_path = candidate
+                print(f"[audio_bgm_mixer] 🎵 Auto-selected BGM: {bgm_path.name} (SOP={args.sop}, Mood={args.mood})")
+        except Exception as e:
+            print(f"[audio_bgm_mixer] ⚠️ Auto BGM resolution skipped: {e}")
+
     # BGM handling: Only include BGM if not explicitly disabled via --no-bgm and file exists
-    use_bgm = (not args.no_bgm) and (args.bgm is not None) and Path(args.bgm).exists()
+    use_bgm = (not args.no_bgm) and (bgm_path is not None) and bgm_path.exists()
 
     if use_bgm:
-        bgm_clean_af = check_and_clean_bgm_filter(Path(args.bgm))
-        inputs.extend(["-stream_loop", "-1", "-i", str(Path(args.bgm).resolve())])
+        bgm_clean_af = check_and_clean_bgm_filter(bgm_path)
+        inputs.extend(["-stream_loop", "-1", "-i", str(bgm_path.resolve())])
         bgm_fade = max(0.0, dur - 0.8)
         filter_parts.append(
             f"[{idx}:a]aresample=48000,{bgm_clean_af},atrim=0:{dur:.3f},volume={args.bgm_vol},"
