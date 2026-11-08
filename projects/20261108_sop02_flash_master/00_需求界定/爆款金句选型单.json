@@ -1,0 +1,18 @@
+{
+  "sop": "AG_SOP_02_v3.0",
+  "title": "一人即千军：AI 超级个体的黄金时代",
+  "target_duration_s": 24.63,
+  "aspect_ratios": [
+    "9:16",
+    "16:9"
+  ],
+  "target_lufs": -14.0,
+  "bgm_genre": "Cyberpunk High-Energy Trap (Sub-Bass <150Hz)",
+  "color_palette": {
+    "background": "#050507",
+    "primary_accent": "#FFDE00",
+    "secondary_accent": "#00FF66",
+    "impact_accent": "#FF3344",
+    "contrast_ratio": ">= 18:1 (WCAG AAA)"
+  }
+}

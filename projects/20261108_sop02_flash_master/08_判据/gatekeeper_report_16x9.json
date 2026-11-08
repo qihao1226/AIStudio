@@ -1,0 +1,19 @@
+{
+  "passed": true,
+  "video": "/home/antigravity/qihao1226/AIStudio/projects/20261108_sop02_flash_master/交付成片/final_flash_1920x1080.mp4",
+  "width": 1920,
+  "height": 1080,
+  "fps": 30.0,
+  "duration_s": 24.634,
+  "has_audio": true,
+  "measured_lufs": -14.5,
+  "target_lufs": -14.0,
+  "black_duration_s": 0,
+  "checks": {
+    "resolution": true,
+    "fps": true,
+    "audio_present": true,
+    "loudness": true,
+    "zero_black_frames": true
+  }
+}

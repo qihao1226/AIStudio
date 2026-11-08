@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE fcpxml>
+<fcpxml version="1.10">
+  <resources>
+    <format id="r1" name="FFVideoFormat1920p30" frameDuration="100/3000s" width="1080" height="1920"/>
+  </resources>
+  <library>
+    <event name="YOUAI_Cloud_Factory_SOP02">
+      <project name="一人即千军_超级个体黄金时代_9x16">
+        <sequence format="r1" duration="738/30s" tcStart="0s" tcFormat="NDF">
+          <spine>
+            <clip name="S01_别再给平庸打工！" duration="55/30s" start="0/30s"/>
+            <clip name="S02_旧时代组织" duration="40/30s" start="55/30s"/>
+            <clip name="S03_正在彻底瓦解！" duration="53/30s" start="96/30s"/>
+            <clip name="S04_算力爆发时代" duration="51/30s" start="150/30s"/>
+            <clip name="S05_一人成军！" duration="45/30s" start="201/30s"/>
+            <clip name="S06_顶尖大模型" duration="42/30s" start="246/30s"/>
+            <clip name="S07_是你的超级杠杆！" duration="54/30s" start="289/30s"/>
+            <clip name="S08_一行精准提示词" duration="47/30s" start="344/30s"/>
+            <clip name="S09_调动万亿参数！" duration="43/30s" start="392/30s"/>
+            <clip name="S10_没有多余员工" duration="42/30s" start="435/30s"/>
+            <clip name="S11_拥有百万军队！" duration="42/30s" start="478/30s"/>
+            <clip name="S12_认知即武器！" duration="59/30s" start="521/30s"/>
+            <clip name="S13_行动即壁垒！" duration="56/30s" start="581/30s"/>
+            <clip name="S14_时代属于开拓者！" duration="44/30s" start="637/30s"/>
+            <clip name="S15_做自己的超级个体！" duration="57/30s" start="681/30s"/>
+          </spine>
+        </sequence>
+      </project>
+    </event>
+  </library>
+</fcpxml>

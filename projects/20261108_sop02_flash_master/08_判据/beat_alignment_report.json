@@ -1,0 +1,127 @@
+{
+  "status": "PASS",
+  "max_drift_s": 0.0,
+  "max_allowed_s": 0.04,
+  "details": [
+    {
+      "shot": "S01",
+      "start": 0.0,
+      "beat": 0.0,
+      "drift_s": 0.0,
+      "text": "别再给平庸打工！",
+      "passed": true
+    },
+    {
+      "shot": "S02",
+      "start": 1.86,
+      "beat": 1.86,
+      "drift_s": 0.0,
+      "text": "旧时代组织",
+      "passed": true
+    },
+    {
+      "shot": "S03",
+      "start": 3.21,
+      "beat": 3.21,
+      "drift_s": 0.0,
+      "text": "正在彻底瓦解！",
+      "passed": true
+    },
+    {
+      "shot": "S04",
+      "start": 5.0,
+      "beat": 5.0,
+      "drift_s": 0.0,
+      "text": "算力爆发时代",
+      "passed": true
+    },
+    {
+      "shot": "S05",
+      "start": 6.71,
+      "beat": 6.71,
+      "drift_s": 0.0,
+      "text": "一人成军！",
+      "passed": true
+    },
+    {
+      "shot": "S06",
+      "start": 8.22,
+      "beat": 8.22,
+      "drift_s": 0.0,
+      "text": "顶尖大模型",
+      "passed": true
+    },
+    {
+      "shot": "S07",
+      "start": 9.65,
+      "beat": 9.65,
+      "drift_s": 0.0,
+      "text": "是你的超级杠杆！",
+      "passed": true
+    },
+    {
+      "shot": "S08",
+      "start": 11.48,
+      "beat": 11.48,
+      "drift_s": 0.0,
+      "text": "一行精准提示词",
+      "passed": true
+    },
+    {
+      "shot": "S09",
+      "start": 13.07,
+      "beat": 13.07,
+      "drift_s": 0.0,
+      "text": "调动万亿参数！",
+      "passed": true
+    },
+    {
+      "shot": "S10",
+      "start": 14.53,
+      "beat": 14.53,
+      "drift_s": 0.0,
+      "text": "没有多余员工",
+      "passed": true
+    },
+    {
+      "shot": "S11",
+      "start": 15.96,
+      "beat": 15.96,
+      "drift_s": 0.0,
+      "text": "拥有百万军队！",
+      "passed": true
+    },
+    {
+      "shot": "S12",
+      "start": 17.39,
+      "beat": 17.39,
+      "drift_s": 0.0,
+      "text": "认知即武器！",
+      "passed": true
+    },
+    {
+      "shot": "S13",
+      "start": 19.37,
+      "beat": 19.37,
+      "drift_s": 0.0,
+      "text": "行动即壁垒！",
+      "passed": true
+    },
+    {
+      "shot": "S14",
+      "start": 21.24,
+      "beat": 21.24,
+      "drift_s": 0.0,
+      "text": "时代属于开拓者！",
+      "passed": true
+    },
+    {
+      "shot": "S15",
+      "start": 22.72,
+      "beat": 22.72,
+      "drift_s": 0.0,
+      "text": "做自己的超级个体！",
+      "passed": true
+    }
+  ]
+}
