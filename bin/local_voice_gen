@@ -1,0 +1,65 @@
+#!/usr/bin/env python3
+"""
+YOUAI Cloud Video Factory - Universal Local TTS Wrapper (local_voice_gen v1.0)
+Uses Piper neural offline TTS on persistent disk (/shared/user/.gemini/youai/piper).
+Zero GPU cost, 100% offline, outputs clean PCM WAV.
+"""
+import argparse
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+PIPER_DIR = Path("/shared/user/.gemini/youai/piper/piper")
+PIPER_BIN = PIPER_DIR / "piper"
+DEFAULT_MODEL = Path("/shared/user/.gemini/youai/piper/models/zh_CN-huayan-medium.onnx")
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="YOUAI Local TTS CLI (Zero GPU)")
+    parser.add_argument("--text", help="Text to speak")
+    parser.add_argument("--file", help="Text file to read")
+    parser.add_argument("--output", "-o", required=True, help="Output WAV path")
+    parser.add_argument("--speed", type=float, default=1.0, help="Speaking speed multiplier (default 1.0)")
+    parser.add_argument("--model", default=str(DEFAULT_MODEL), help="Piper ONNX model path")
+    args = parser.parse_args()
+
+    text = ""
+    if args.text:
+        text = args.text
+    elif args.file:
+        text = Path(args.file).read_text(encoding="utf-8")
+    else:
+        text = sys.stdin.read()
+
+    text = text.strip()
+    if not text:
+        print("[local_voice_gen] Error: Empty text input", file=sys.stderr)
+        return 1
+
+    out_p = Path(args.output).resolve()
+    out_p.parent.mkdir(parents=True, exist_ok=True)
+
+    length_scale = round(1.0 / max(args.speed, 0.2), 3)
+
+    env = os.environ.copy()
+    env["LD_LIBRARY_PATH"] = str(PIPER_DIR) + ":" + env.get("LD_LIBRARY_PATH", "")
+
+    cmd = [
+        str(PIPER_BIN),
+        "--model", args.model,
+        "--length_scale", str(length_scale),
+        "--output_file", str(out_p),
+    ]
+
+    p = subprocess.run(cmd, input=text, text=True, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if p.returncode != 0 or not out_p.exists() or out_p.stat().st_size == 0:
+        print(f"[local_voice_gen] Piper error: {p.stderr}", file=sys.stderr)
+        return p.returncode or 1
+
+    print(f"[local_voice_gen] Success -> {out_p} ({out_p.stat().st_size} bytes)")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
