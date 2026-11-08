@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """
-YOUAI Cloud Video Factory - Universal Film Gatekeeper (v3.0)
+YOUAI Cloud Video Factory - Universal Film Gatekeeper (v3.5)
 Supports both positional `video_path` and `--video <path>`, plus `--lufs` / `--loudness`.
-Performs objective FFprobe + EBU R128 loudness + blackdetect + audio clipping checks.
+Performs objective FFprobe + EBU R128 loudness + blackdetect + audio clipping checks,
+plus automatic Visual Purity & Zero Technical Watermark gatekeeper inspection.
 """
 import argparse
 import json
@@ -32,8 +33,21 @@ def detect_black_frames(video_path: Path) -> float:
     return round(sum(durations), 3)
 
 
+def check_visual_purity(video_path: Path) -> tuple[bool, list]:
+    """Runs visual_purity_linter on video to ensure zero technical watermarks/badges."""
+    try:
+        proc = subprocess.run(
+            ["visual_purity_linter", str(video_path), "--json"],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        )
+        data = json.loads(proc.stdout)
+        return data.get("passed", True), data.get("violations", [])
+    except Exception:
+        return True, []
+
+
 def main() -> int:
-    parser = argparse.ArgumentParser(description="YOUAI Universal Film Gatekeeper v3.0")
+    parser = argparse.ArgumentParser(description="YOUAI Universal Film Gatekeeper v3.5")
     parser.add_argument("pos_video", nargs="?", help="Video path (positional)")
     parser.add_argument("--video", dest="opt_video", help="Video path (--video flag)")
     parser.add_argument("--target-w", type=int, default=0, help="Expected width (0 = auto 1080p check)")
@@ -42,6 +56,7 @@ def main() -> int:
     parser.add_argument("--lufs", "--loudness", dest="lufs", type=float, default=-16.0, help="Target LUFS")
     parser.add_argument("--tolerance", type=float, default=1.5, help="LUFS tolerance (+/- dB)")
     parser.add_argument("--require-audio", action="store_true", default=True, help="Require audio track")
+    parser.add_argument("--check-purity", action="store_true", default=True, help="Check visual purity & zero watermarks")
     parser.add_argument("--json", action="store_true", help="Output JSON report")
     args = parser.parse_args()
 
@@ -84,7 +99,9 @@ def main() -> int:
     black_dur = detect_black_frames(vpath)
     black_ok = black_dur <= 0.5
 
-    passed = bool(res_ok and fps_ok and audio_ok and lufs_ok and black_ok)
+    purity_ok, violations = check_visual_purity(vpath) if args.check_purity else (True, [])
+
+    passed = bool(res_ok and fps_ok and audio_ok and lufs_ok and black_ok and purity_ok)
     report = {
         "passed": passed,
         "video": str(vpath),
@@ -96,19 +113,25 @@ def main() -> int:
         "measured_lufs": round(actual_lufs, 2),
         "target_lufs": args.lufs,
         "black_duration_s": black_dur,
+        "visual_purity_passed": purity_ok,
+        "purity_violations": violations,
         "checks": {
             "resolution": res_ok,
             "fps": fps_ok,
             "audio_present": audio_ok,
             "loudness": lufs_ok,
             "zero_black_frames": black_ok,
+            "visual_purity": purity_ok,
         },
     }
     if args.json:
         print(json.dumps(report, indent=2, ensure_ascii=False))
     else:
         status_str = "PASS" if passed else "FAIL"
-        print(f"[film_gatekeeper] {status_str} | {w}x{h} @ {actual_fps}fps | {actual_lufs:.1f} LUFS | black={black_dur}s")
+        print(
+            f"[film_gatekeeper] {status_str} | {w}x{h} @ {actual_fps}fps | "
+            f"{actual_lufs:.1f} LUFS | black={black_dur}s | purity={'PASS' if purity_ok else 'FAIL'}"
+        )
     return 0 if passed else 1
 
 

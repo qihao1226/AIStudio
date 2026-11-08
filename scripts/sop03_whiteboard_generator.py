@@ -201,14 +201,13 @@ def generate_marker_foley(total_duration: float, sample_rate: int = 48000) -> Pa
 
         # Generate active drawing scratch
         t_arr = np.linspace(0, draw_dur, draw_samples, endpoint=False)
-        # Multi-harmonic scratch frequency (marker nib on textured parchment)
-        noise = np.random.normal(0, 0.15, draw_samples)
-        # Stroke rhythm envelopes (4-6 strokes per second)
-        stroke_freq = 5.2
-        stroke_mod = (np.sin(2 * np.pi * stroke_freq * t_arr) > 0.1).astype(np.float32)
-        # Squeak accents
-        squeak = np.sin(2 * np.pi * 2400 * t_arr) * (np.sin(2 * np.pi * (stroke_freq * 2) * t_arr) > 0.8).astype(np.float32) * 0.08
-        scratch = (noise + squeak) * stroke_mod * 0.35
+        # Natural soft felt-tip / pencil on parchment friction:
+        # Band-limited gentle acoustic noise, strictly zero pure-tone electronic sine squeaks
+        noise = np.random.normal(0, 0.05, draw_samples)
+        # Gentle natural stroke modulation (4 strokes per sec) with smooth envelope
+        stroke_freq = 4.2
+        stroke_mod = 0.5 * (1.0 + np.sin(2 * np.pi * stroke_freq * t_arr))
+        scratch = noise * stroke_mod * 0.20
 
         # Place into audio
         audio[st_sample:st_sample + draw_samples] += scratch[:min(draw_samples, n_samples - st_sample)]
@@ -496,12 +495,8 @@ def render_scene_frame(scene: dict, local_t: float, dur: float) -> Image.Image:
     prog = min(1.0, max(0.0, local_t / max(0.01, dur)))
     draw_prog = min(1.0, prog / 0.70)  # Drawing finishes by 70% of duration
 
-    # 2. Top Header Telemetry & Layout Badge (Safe margin >= 100px)
-    font_badge = ImageFont.truetype(FONT_BOLD, 24)
-    draw.text((120, 50), f"YOUAI // AG_SOP_03 白板讲解 · {scene['layout_name']} [{scene['layout']}]",
-              fill=GRAY_MUTED, font=font_badge)
-    draw.text((WIDTH - 420, 50), "3.14 CPS 黄金认知节奏 · 1080P",
-              fill=BLUE_INSIGHT, font=font_badge)
+    # 2. Frame Presentation (Clean, zero technical watermark)
+    # Audience-first clean canvas without developer HUD overlays
 
     # 3. Main Scene Title
     font_title = ImageFont.truetype(FONT_BOLD, 54)
@@ -824,7 +819,7 @@ def run_gatekeepers_and_artifacts(video_path: Path):
     d4.text((160, 220), "为什么 90% 的人越努力越穷？", fill=RED_ALERT, font=ImageFont.truetype(FONT_BOLD, 72))
     d4.text((160, 320), "揭秘「低水平重复」的伪勤奋陷阱", fill=INK_COLOR, font=ImageFont.truetype(FONT_BOLD, 54))
     draw_stickman_epiphany(d4, 720, 680, 1.0)
-    d4.text((450, 940), "YOUAI // AG_SOP_03 白板讲解 · 3.14 CPS 黄金认知节奏", fill=GRAY_MUTED, font=ImageFont.truetype(FONT_BOLD, 30))
+    d4.text((450, 940), "深度思考 · 知识手绘 · 破局成长", fill=GRAY_MUTED, font=ImageFont.truetype(FONT_BOLD, 30))
     c4.save(str(cover_4x3_path))
 
     # Cover 3:4 (1080x1440)

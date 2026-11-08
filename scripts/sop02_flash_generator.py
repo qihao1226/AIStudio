@@ -393,15 +393,7 @@ def render_shot_frame(shot: dict, progress: float, width: int, height: int, fram
         draw.line([(x, 0), (x, height)], fill=(32, 28, 16), width=1)
     for y in range(offset_y, height, grid_gap):
         draw.line([(0, y), (width, y)], fill=(32, 28, 16), width=1)
-
-    # 3. Outer UI badges & HUD telemetry (StaticGuard: safe margin >= 100px)
-    hud_y = 120 if is_vert else 70
-    draw.text((80, hud_y), f"YOUAI // KINETIC FLASH · {shot['badge_tag']}", font=font_badge, fill=(255, 222, 0))
-    draw.text((width - 380, hud_y), "SYS: SUB-BASS SYNC <= 40MS", font=font_badge, fill=(0, 255, 102))
-
-    bot_y = height - 120 if is_vert else height - 70
-    draw.text((80, bot_y), "TOP-TIER CEILING TEST · AG_SOP_02", font=font_badge, fill=(160, 160, 160))
-    draw.text((width - 320, bot_y), "LUFS: -14.0 · 1080P", font=font_badge, fill=(255, 222, 0))
+    # 3. Outer Presentation: Clean, zero technical watermark (Audience-first focus on typography)
 
     # 4. In-animation physics (First 4 frames: Over-scale 2.2 -> 0.96 -> 1.00 & Shake)
     shake_x, shake_y = 0, 0

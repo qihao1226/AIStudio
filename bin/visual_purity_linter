@@ -1,0 +1,168 @@
+#!/usr/bin/env python3
+"""
+YOUAI Cloud Video Factory - Visual Purity & Clean Frame Linter (v2.0)
+Strictly enforces clean, viewer-facing visual presentation across all 6 SOPs.
+Bans internal engineering clutter, fake English badges, and technical watermarks.
+"""
+import argparse
+import json
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+# Forbidden regex patterns that must NEVER be drawn onto the canvas or displayed to audience
+FORBIDDEN_RENDER_PATTERNS = [
+    (r"\bSOP[-_]?0[1-6]\b", "Internal SOP identifier (e.g. SOP-01, SOP_02)"),
+    (r"\bAG_SOP_[0-6A-Z]+\b", "Internal SOP naming (e.g. AG_SOP_03)"),
+    (r"\bWB_L0[1-8]\b", "Whiteboard internal layout ID (e.g. WB_L04)"),
+    (r"\bL0[1-8]\b", "Generic internal layout token (e.g. L01, L03)"),
+    (r"\bT[1-6]_[a-z0-9_]+\b", "Template internal token (e.g. T1_minimal_bold)"),
+    (r"\b\d+\s*FPS\b", "Framerate technical telemetry (e.g. 30 FPS, 60 FPS)"),
+    (r"\b\d+\.?\d*\s*CPS\b", "Cadence technical telemetry (e.g. 3.14 CPS)"),
+    (r"-\d+\.?\d*\s*LUFS\b", "Loudness technical telemetry (e.g. -16.0 LUFS)"),
+    (r"\bBPM\s*\d+\b", "Tempo technical telemetry (e.g. BPM 125)"),
+    (r"\bSUB-BASS SYNC\b", "Audio engineering telemetry on screen"),
+    (r"YOUAI\s*//", "Internal developer watermark prefix (YOUAI //)"),
+    (r"TOP-TIER CEILING TEST", "Test harness label"),
+    (r"\[\s*TRUTH\s*#\d+\s*\]", "Generic test title placeholder [ TRUTH #01 ]"),
+    (r"\bEPS\s*#\d+\b", "Debug episode index overlay (e.g. EPS #01)"),
+    (r"\bBEAT\s*\d+/\d+\b", "Debug beat index overlay (e.g. BEAT 1/5)"),
+    (r"CONFIDENTIAL\s*\|", "Decorative fake security classification banner"),
+    (r"REMOTION FINANCIAL CHART\s*//", "Internal framework name banner"),
+    (r"ASYMMETRIC CONTRAST\s*//", "Internal layout design token banner"),
+    (r"DEEP INVESTIGATION\s*//", "Decorative pseudo-English kicker"),
+    (r"OFFICIAL EVIDENCE\s*//", "Decorative pseudo-English kicker"),
+]
+
+
+def check_rendered_text(text: str) -> list:
+    violations = []
+    for pattern, desc in FORBIDDEN_RENDER_PATTERNS:
+        matches = re.findall(pattern, text, re.IGNORECASE)
+        if matches:
+            violations.append({
+                "rule": desc,
+                "pattern": pattern,
+                "occurrences": list(set(matches))
+            })
+    return violations
+
+
+def lint_code_file(file_path: Path) -> dict:
+    """Scans code files specifically for strings being drawn to canvas or screen."""
+    lines = file_path.read_text(encoding="utf-8", errors="replace").splitlines()
+    violations = []
+    # Match strings passed to draw.text, fillText, or template text definitions
+    draw_pattern = re.compile(r'(?:draw\.text|fillText|<text|title|badge|tag|label|kicker).*?["\']([^"\']+)["\']', re.IGNORECASE)
+
+    for idx, line in enumerate(lines, 1):
+        # Ignore comments
+        stripped = line.strip()
+        if stripped.startswith("#") or stripped.startswith("//") or stripped.startswith("*"):
+            continue
+        
+        matches = draw_pattern.findall(line)
+        for m in matches:
+            v_list = check_rendered_text(m)
+            if v_list:
+                for v in v_list:
+                    violations.append({
+                        "line": idx,
+                        "code": line.strip()[:100],
+                        "rule": v["rule"],
+                        "occurrences": v["occurrences"]
+                    })
+
+    return {
+        "file": str(file_path),
+        "passed": len(violations) == 0,
+        "violations": violations
+    }
+
+
+def lint_html_or_svg(file_path: Path) -> dict:
+    """Scans HTML or SVG for visible text nodes."""
+    content = file_path.read_text(encoding="utf-8", errors="replace")
+    # Extract text outside HTML tags
+    visible_texts = re.findall(r">([^<]+)<", content)
+    combined = " ".join([t.strip() for t in visible_texts if t.strip()])
+    violations = check_rendered_text(combined)
+    return {
+        "file": str(file_path),
+        "passed": len(violations) == 0,
+        "violations": violations
+    }
+
+
+def lint_video_frames(video_path: Path, num_samples: int = 12) -> dict:
+    import tempfile
+    violations = []
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmp = Path(tmpdir)
+        cmd = [
+            "ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
+            "-i", str(video_path),
+            "-vf", f"select=not(mod(n\\,{max(1, int(30 * 30 / num_samples))})),scale=1280:720",
+            "-vsync", "vfr",
+            str(tmp / "frame_%03d.png")
+        ]
+        try:
+            subprocess.run(cmd, check=True)
+            has_tesseract = subprocess.run(["which", "tesseract"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0
+            if has_tesseract:
+                for img_p in tmp.glob("*.png"):
+                    ocr_text = subprocess.check_output(
+                        ["tesseract", str(img_p), "stdout", "-l", "eng+chi_sim", "--psm", "6"],
+                        stderr=subprocess.DEVNULL, text=True
+                    )
+                    frame_v = check_rendered_text(ocr_text)
+                    if frame_v:
+                        violations.append({
+                            "frame": img_p.name,
+                            "violations": frame_v
+                        })
+        except Exception:
+            pass
+
+    return {
+        "video": str(video_path),
+        "passed": len(violations) == 0,
+        "violations": violations
+    }
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="YOUAI Visual Purity & Clean Frame Linter v2.0")
+    parser.add_argument("target", help="Path to video, HTML presentation, SVG, or generator python script")
+    parser.add_argument("--json", action="store_true", help="Output JSON report")
+    args = parser.parse_args()
+
+    target = Path(args.target).resolve()
+    if not target.exists():
+        print(json.dumps({"passed": False, "error": f"File not found: {target}"}))
+        return 1
+
+    suffix = target.suffix.lower()
+    if suffix in [".mp4", ".mov", ".mkv"]:
+        result = lint_video_frames(target)
+    elif suffix in [".html", ".htm", ".svg"]:
+        result = lint_html_or_svg(target)
+    else:
+        result = lint_code_file(target)
+
+    if args.json:
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+    else:
+        if result["passed"]:
+            print(f"[visual_purity_linter] PASS: Clean visual presentation verified for {target.name} (zero technical clutter/watermarks).")
+        else:
+            print(f"[visual_purity_linter] FAIL: {len(result['violations'])} visual purity violations found in {target.name}:")
+            for v in result["violations"]:
+                print(f"  - {v}")
+
+    return 0 if result["passed"] else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

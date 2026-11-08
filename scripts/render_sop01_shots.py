@@ -112,8 +112,8 @@ def render_shot1_frame(f_idx: int, total_f: int) -> Image.Image:
     base_x = 160 + int(p * 20.0) # Slow drift
     base_y = 260
 
-    # Top Telemetry Badge
-    draw.text((base_x, 150), "DEEP INVESTIGATION // 深度商业纪实", font=font_kicker, fill=C_ACCENT_AMBER)
+    # Top Topic Label (Clean, professional documentary)
+    draw.text((base_x, 150), "深度商业纪实调查", font=font_kicker, fill=C_ACCENT_AMBER)
 
     # Thin accent rule
     rule_w = int(min(600, 200 + p * 400))
@@ -217,8 +217,8 @@ def render_shot2_frame(f_idx: int, total_f: int) -> Image.Image:
     font_head = ImageFont.truetype(FONT_SANS_BOLD, 36)
     font_stamp = ImageFont.truetype(FONT_SANS_BOLD, 22)
 
-    draw.text((doc_x, 95), "OFFICIAL EVIDENCE // PJM INTERCONNECTION REPORT", font=font_hud, fill=C_ACCENT_GREEN)
-    draw.text((doc_x + doc_w - 280, 95), "SEC FILING REF: 10-K // 2026", font=font_hud, fill=C_TEXT_MUTED)
+    draw.text((doc_x, 95), "官方权威物证 · PJM 区域电网并网负荷规划报告", font=font_hud, fill=C_ACCENT_GREEN)
+    draw.text((doc_x + doc_w - 280, 95), "美国 SEC 10-K 正式备案", font=font_hud, fill=C_TEXT_MUTED)
 
     # Bottom floating takeaway card
     tag_y = 960
@@ -305,7 +305,7 @@ def render_shot3_frame(f_idx: int, total_f: int) -> Image.Image:
     font_desc = ImageFont.truetype(FONT_SANS_BOLD, 32)
     font_title = ImageFont.truetype(FONT_SANS_BOLD, 26)
 
-    draw.text((200, 90), "REMOTION FINANCIAL CHART // 负荷增长指数", font=font_title, fill=C_ACCENT_AMBER)
+    draw.text((200, 90), "数据中心申请接入负荷激增走势", font=font_title, fill=C_ACCENT_AMBER)
 
     num_str = f"{counter_val}"
     draw.text((200, 130), num_str, font=font_num, fill=C_TEXT_WHITE)
@@ -355,7 +355,7 @@ def render_shot4_frame(f_idx: int, total_f: int) -> Image.Image:
     font_col_desc = ImageFont.truetype(FONT_SANS_BOLD, 26)
     font_mult = ImageFont.truetype(FONT_SANS_BOLD, 36)
 
-    draw.text((160, 90), "ASYMMETRIC CONTRAST L03 // 功耗鸿沟对比", font=font_head, fill=C_ACCENT_AMBER)
+    draw.text((160, 90), "单柜能耗维度鸿沟对比", font=font_head, fill=C_ACCENT_AMBER)
 
     # Split Two Columns: Left = 160..900, Right = 1020..1760
     # Left Column: Legacy 7kW Server Rack (Dims at t > 1.8s)
@@ -368,7 +368,7 @@ def render_shot4_frame(f_idx: int, total_f: int) -> Image.Image:
     c_left_text = (int(C_TEXT_WHITE[0] * left_alpha), int(C_TEXT_WHITE[1] * left_alpha), int(C_TEXT_WHITE[2] * left_alpha))
     c_left_muted = (int(C_TEXT_MUTED[0] * left_alpha), int(C_TEXT_MUTED[1] * left_alpha), int(C_TEXT_MUTED[2] * left_alpha))
 
-    draw.text((200, 200), "LEGACY DATA CENTER // 传统通用机房", font=font_head, fill=c_left_muted)
+    draw.text((200, 200), "传统通用服务器机柜", font=font_head, fill=c_left_muted)
     draw.text((200, 250), "标准单机柜功率", font=font_col_t, fill=c_left_text)
     draw.text((200, 310), "7 kW", font=font_col_stat, fill=c_left_text)
     draw.text((200, 440), "• 传统风冷对流散热\n• 常规 220V 工业低压电网\n• 承载 CPU 通用业务与普通存储", font=font_col_desc, fill=c_left_muted)
@@ -387,7 +387,7 @@ def render_shot4_frame(f_idx: int, total_f: int) -> Image.Image:
     right_box = [1020, 160, 1760, 940]
     draw.rectangle(right_box, fill=(28, 22, 18), outline=C_ACCENT_AMBER, width=2)
 
-    draw.text((1060, 200), "AI COMPUTE POD // 新一代高密集群", font=font_head, fill=C_ACCENT_AMBER)
+    draw.text((1060, 200), "新一代高密算力集群机柜", font=font_head, fill=C_ACCENT_AMBER)
     draw.text((1060, 250), "NVIDIA Blackwell NVL72", font=font_col_t, fill=C_TEXT_WHITE)
     draw.text((1060, 310), "120 kW", font=font_col_stat, fill=C_ACCENT_AMBER)
     draw.text((1060, 440), "• 全浸没/冷板式超密液冷\n• 工业级高压特种供电直通\n• 单柜吞吐 72 颗 B200 算力矩阵", font=font_col_desc, fill=C_TEXT_WHITE)

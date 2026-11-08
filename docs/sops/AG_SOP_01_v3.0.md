@@ -54,6 +54,8 @@ export PATH="/home/antigravity/.local/bin:/shared/user/.gemini/youai/bin:$PATH"
 5. **连续帧微动与视差契约（Living Motion）**：任何在屏停留超过 1.8 秒的视觉层，必须绑定基于时间变量 `t` 的连续缓动（摄像机慢推 Scale $1.00 \to 1.05$ + 前景与背景 1.5x 差速平移），确保画面每一帧都在呼吸。
 6. **物证荧光笔涂抹动画（0.6s Draw Mask）**：文件原件重点语句必须采用 `clip-path: inset(0 calc(100% - var(--p)) 0 0)` 实现从左至右的半透明荧光笔涂抹高亮。
 7. **数字跳动与落点辉光（Ticking Counter & Bloom）**：核心统计数字进场必须在 0.8s 内从 0 滚动递增至目标值，并在锁定瞬间触发辉光脉冲。
+8. **纯净画质与零技术水印铁律**：严禁在画面四周叠加 `DEEP INVESTIGATION //`、`REMOTION FINANCIAL CHART //`、`ASYMMETRIC CONTRAST L03`、`OFFICIAL EVIDENCE //` 等内部技术代号与虚假伪英文标签！所有画面文字必须是真实清晰的中文专业调查表述与权威文献，必须 100% 通过 `visual_purity_linter`。
+9. **深沉纪实声学与 BGM 宁缺毋滥原则**：严禁高频刺耳机械滴答；BGM 必须是低频电影氛围垫乐（Investigative Pad），若无精准匹配的高品质音乐，无条件执行 `--no-bgm` 纯净解说母带，以演播室原声保证深度调查片的严肃权威感。
 
 ---
 
