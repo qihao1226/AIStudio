@@ -68,51 +68,54 @@ Antigravity 运行环境由三部分组成：
 
 ---
 
-## 三、阶段三任务单：六大 SOP 能力上限实操测试（6 轮极限压测规约）
+## 三、阶段三任务单：六大 SOP 能力上限实操测试（6 轮极限压测规约 · 算力解耦版）
 
-> **总体要求**：每一轮测试必须产出一个**真正达到爆款商业交付标准**的完整视频成片（绝不允许用几秒钟的简陋测试片敷衍），必须调用我们在 Colab 上的顶级开源模型矩阵（`MiniMax-H3` / `Z-Image-Turbo` / `Kokoro-82M` / `F5-TTS` / `Faster-Whisper-Turbo`），必须 100% 通过客观机器门禁（[`film_gatekeeper`](file:///home/antigravity/qihao1226/AIStudio/bin/film_gatekeeper)、[`motion_check`](file:///home/antigravity/qihao1226/AIStudio/bin/motion_check)、[`pen_motion`](file:///home/antigravity/qihao1226/AIStudio/bin/pen_motion)、[`face_occlusion_check`](file:///home/antigravity/qihao1226/AIStudio/bin/face_occlusion_check)、[`cognitive_load_linter`](file:///home/antigravity/qihao1226/AIStudio/bin/cognitive_load_linter)），并按自包含目录结构完整上传至 Google Drive `内容生产` (`1FHApfkCr9Xq76E4gTAVR5i3weVsRTmJc`) 对应产线文件夹！
+> **【最高架构边界原则：按需解耦，严禁盲目强绑 Colab】**
+> 1. **只有 `AG_SOP_04`（全源素材重构与外挂多模态车间）是以 `Colab GPU` 为核心主力的产线**（重度调用 `MiniMax-H3`、`Z-Image-Turbo`、`F5-TTS`）。
+> 2. **`AG_SOP_01`、`02`、`03`、`05`、`06` 五条产线各自拥有独立的本地原生渲染引擎与复合 Skills 模具**（真实物证 2.5D 视差、代码级快闪动效、SVG 矢量手绘白板、工业口播伴侣浮层、极客架构聚光灯），**默认 100% 在 Antigravity 云端主机本地极速闭环完成（零 GPU 消耗、秒级出片）**！除非某个特定分镜极端缺失底图或配音，否则严禁强行拉起 Colab GPU。
+> 3. 每一轮测试必须产出真正达到商业交付标准的完整成片，100% 通过客观机器门禁（[`film_gatekeeper`](file:///home/antigravity/qihao1226/AIStudio/bin/film_gatekeeper)、[`motion_check`](file:///home/antigravity/qihao1226/AIStudio/bin/motion_check)、[`pen_motion`](file:///home/antigravity/qihao1226/AIStudio/bin/pen_motion)、[`face_occlusion_check`](file:///home/antigravity/qihao1226/AIStudio/bin/face_occlusion_check)、[`cognitive_load_linter`](file:///home/antigravity/qihao1226/AIStudio/bin/cognitive_load_linter)），并按自包含目录结构完整上传至 Google Drive `内容生产` (`1FHApfkCr9Xq76E4gTAVR5i3weVsRTmJc`) 对应产线文件夹！
 
 ---
 
-### 🔥 第 1 轮压测：`AG_SOP_01` · 商业深度纪实视频线（2.5D 物证微动 + 电影调色）
+### 🔥 第 1 轮压测：`AG_SOP_01` · 商业深度纪实与真素材数字可视化线（本地真物证 + 2.5D 视差 + 电影调色，零 Colab 强绑）
 - **参考手册**：[`docs/sops/AG_SOP_01_v3.0.md`](file:///home/antigravity/qihao1226/AIStudio/docs/sops/AG_SOP_01_v3.0.md)
-- **Google Drive 交付目录**：`内容生产/01_真素材数字可视化/20261108_SOP01_AI算力能源战争_极限压测/`
+- **Google Drive 交付目录**：`内容生产/01_真素材数字可视化/20261108_SOP01_AI算力能源战争_本地真素材版/`
 - **压测命题**：《AI 算力尽头是能源：为什么科技巨头正在全球抢购核电站？》（时长 `30~45 秒`，6~8 个分镜，16:9 横屏 `1920x1080 @ 30fps`）。
-- **必须动用的顶级能力组合**：
-  1. **Colab `Z-Image-Turbo` (`colab_image_gen`)**：生成 4 张超写实 1080p 商业纪实底图 + 2 张带精准中文/英文标题的华尔街财报数据物证卡。
-  2. **Colab `MiniMax-H3` (`minimax_h3_colab`)**：将其中 2 个核心分镜（如核电冷却塔/算力中心巡检）生成为真 3D 运镜 + 32kHz 工业环境音动态视频。
-  3. **Colab `Kokoro-82M` (`colab_voice_gen --voice zm_yunjian --with-timestamps`)**：生成浑厚商业纪录片男声旁白与毫秒级逐字时间戳，混音锁定 `-16.0 LUFS`。
-  4. **OpenFilm + 门禁**：套用 `lemo-opuscar` (`Oppenheimer` 琥珀暗金调色)，生成 12 格 [`wallstreet-strip`](file:///home/antigravity/qihao1226/AIStudio/bin/wallstreet-strip) 检视表，通过 [`motion_check`](file:///home/antigravity/qihao1226/AIStudio/bin/motion_check)（运动率 $\ge 30\%$）与 [`film_gatekeeper`](file:///home/antigravity/qihao1226/AIStudio/bin/film_gatekeeper) 绿单。
+- **核心原生工序（纯 Antigravity 本地闭环，不绑 Colab）**：
+  1. **奥斯卡电影调色定调 (`search_styles`)**：调用 `search_styles "Spotlight"` 与 `search_styles "Oppenheimer"` 提取暗调商业纪实色彩令牌与径向暗角滤镜（Vignette）。
+  2. **37 套持久化 Skills 复合模具装配**：严禁 PIL 静态画图！强制认领 `Jacky-motion L01/L03/L05/L08`（左轴大字、非对称机柜对比、电网层级、研报证据板）、`Remotion Financial Chart`（发光走势曲线与跳动计数器）、`Stage25D`（真实研报/SEC 10-K 原件 2.5D 连续帧景深推拉 + 0.6s 荧光笔涂抹高亮）与 `HyperFrames T8`（交割凭单红章砸印）。
+  3. **音频母带混音 (`audio_bgm_mixer`)**：按 `3.7 字/秒` 深度叙事节奏生成旁白，混入深沉调查背景乐，30ms 首尾防爆音淡化，严格锁定 `-16.0 ± 1.0 LUFS`。
+  4. **OpenFilm 4 层编译与三重门禁**：输出 12 格 [`wallstreet-strip`](file:///home/antigravity/qihao1226/AIStudio/bin/wallstreet-strip) 检视表，100% 通过 [`motion_check`](file:///home/antigravity/qihao1226/AIStudio/bin/motion_check)（镜头运动活跃率 $\ge 30\%$）与 [`film_gatekeeper`](file:///home/antigravity/qihao1226/AIStudio/bin/film_gatekeeper) 绿单。
 
 ---
 
-### ⚡ 第 2 轮压测：`AG_SOP_02` · 极速快闪大字动效线（150Hz 底鼓重音同频 + 视觉大字报）
+### ⚡ 第 2 轮压测：`AG_SOP_02` · 极速快闪大字动效线（150Hz 底鼓重音同频 + 代码级排版引擎，零 Colab 强绑）
 - **参考手册**：[`docs/sops/AG_SOP_02_v3.0.md`](file:///home/antigravity/qihao1226/AIStudio/docs/sops/AG_SOP_02_v3.0.md)
 - **Google Drive 交付目录**：`内容生产/02_极速快闪动效/20261108_SOP02_超级个体时代宣言_极限压测/`
 - **压测命题**：《一人即千军：AI 超级个体的黄金时代》（时长 `20~30 秒`，高密度快节奏 12~16 镜，同时产出 `16:9` 与 `9:16` 双版本）。
-- **必须动用的顶级能力组合**：
-  1. **Colab `Z-Image-Turbo` (`colab_image_gen`)**：生成 4 张包含巨幅 3D 金属中文核心词（如「算力革命」「一人成军」「极致杠杆」）的赛博黑金背景底图。
-  2. **Colab `Kokoro-82M` (`colab_voice_gen --voice zm_yunxi --speed 1.15 --with-timestamps`)**：生成高能量快节奏男声旁白与逐字毫秒级时间戳。
-  3. **`beat_detector` + OpenFilm 快闪卡点**：提取 BGM 150Hz 以下底鼓（Kick）毫秒级峰值，使重音字卡缩放冲击与底鼓误差 $\le 40\text{ms}$，通过 [`film_gatekeeper`](file:///home/antigravity/qihao1226/AIStudio/bin/film_gatekeeper)（`-14.0 LUFS`）验收。
+- **核心原生工序（纯 Antigravity 本地闭环）**：
+  1. **`beat_detector` 鼓点提取**：提取 BGM 150Hz 以下底鼓（Kick）毫秒级峰值时间戳。
+  2. **代码级高对比大字冲击舞台**：黑金/高饱和极简撞色交替、巨幅核心词弹簧缩放冲击（误差 $\le 40\text{ms}$）。
+  3. **硬核门禁**：通过 [`film_gatekeeper`](file:///home/antigravity/qihao1226/AIStudio/bin/film_gatekeeper)（`-14.0 ± 1.0 LUFS`）验收。
 
 ---
 
-### ✍️ 第 3 轮压测：`AG_SOP_03` · 白板手绘与火柴人讲解线（3.14 字/秒黄金认知节奏）
+### ✍️ 第 3 轮压测：`AG_SOP_03` · 白板手绘与火柴人讲解线（3.14 字/秒黄金认知节奏 + 纯矢量 SVG，零 Colab 强绑）
 - **参考手册**：[`docs/sops/AG_SOP_03_v3.0.md`](file:///home/antigravity/qihao1226/AIStudio/docs/sops/AG_SOP_03_v3.0.md)
 - **Google Drive 交付目录**：`内容生产/03_白板火柴人讲解/20261108_SOP03_复利与认知陷阱_极限压测/`
 - **压测命题**：《为什么 90% 的人明明很努力，却掉进了“伪勤奋”陷阱？》（时长 `30~40 秒`，6~8 个白板分镜）。
-- **必须动用的顶级能力组合**：
-  1. **Colab `Kokoro-82M` (`colab_voice_gen --voice zf_xiaobei --with-timestamps`)**：生成清晰知性的科技讲解女声，严格将语速控制在 **`3.14 ± 0.15` 字/秒** 黄金区间。
-  2. **`wb` + `pen_motion` 渐进笔触渲染**：羊皮纸护眼底色（`#FAF6EE`）+ 手绘 SVG 路径渐进勾勒 + 火柴人情绪微动 + 翻页擦除拟音（Foley SFX）。
+- **核心原生工序（纯 Antigravity 本地闭环）**：
+  1. **黄金认知语速控制**：生成清晰知性的讲解语音，严格将语速控制在 **`3.14 ± 0.15` 字/秒** 黄金区间。
+  2. **`wb` + `pen_motion` 渐进笔触渲染**：羊皮纸护眼底色（`#FAF6EE`）+ 手绘 SVG 路径渐进勾勒 + 火柴人情绪简笔画 + 翻页书写摩擦拟音（Foley SFX）。
   3. **硬核门禁**：100% 通过 [`pen_motion`](file:///home/antigravity/qihao1226/AIStudio/bin/pen_motion) 与 [`film_gatekeeper`](file:///home/antigravity/qihao1226/AIStudio/bin/film_gatekeeper)（`-16.0 LUFS`）验收。
 
 ---
 
-### 🚀 第 4 轮压测：`AG_SOP_04` · 全源素材重构与外挂多模态车间（全明星模型大联合作战）
+### 🚀 第 4 轮压测：`AG_SOP_04` · 全源素材重构与外挂多模态车间（Colab A100/L4 全明星模型大联合作战）
 - **参考手册**：[`docs/sops/AG_SOP_04_v3.0.md`](file:///home/antigravity/qihao1226/AIStudio/docs/sops/AG_SOP_04_v3.0.md)
 - **Google Drive 交付目录**：`内容生产/04_全源素材重构/20261108_SOP04_硅谷算力帝国重构_极限压测/`
 - **压测命题**：读取 `04_全源素材重构` 现有黄仁勋/算力中心基础图片素材，全流程重构一部 **“真动态音画同出 + 零样本声音克隆 + 四层景深合成”** 的旗舰样片（时长 `25~30 秒`，同时输出 `16:9` 横屏与 `9:16` 智能竖屏双母带）。
-- **必须动用的顶级能力组合**：
+- **必须动用的 Colab 顶级能力组合（本产线为主力 GPU 车间）**：
   1. **Colab A100 `MiniMax-H3` (`minimax_h3_colab --mode ref2va`)**：基于人物参考图生成 2~3 段保持同一人物形象、不同景别且带 32kHz 立体声与中文口型对白的真动态视频片段。
   2. **Colab L4 `Z-Image-Turbo` (`colab_image_gen`)**：生成配套的 1080p 中英双语数据可视化底图。
   3. **Colab L4 `F5-TTS` (`colab_voice_gen --engine f5-tts`)**：使用参考音频完成零样本克隆旁白 + `Faster-Whisper-Turbo` 逐词字幕对齐。
@@ -120,25 +123,23 @@ Antigravity 运行环境由三部分组成：
 
 ---
 
-### 🎙️ 第 5 轮压测：`AG_SOP_05` · 工业口播伴侣动效线（AI 主播对口型 + 面部避障伴动浮层）
+### 🎙️ 第 5 轮压测：`AG_SOP_05` · 工业口播伴侣动效线（本地口播 A-Roll + 面部避障伴动浮层，按需选配 Colab）
 - **参考手册**：[`docs/sops/AG_SOP_05_v3.0.md`](file:///home/antigravity/qihao1226/AIStudio/docs/sops/AG_SOP_05_v3.0.md)
 - **Google Drive 交付目录**：`内容生产/05_工业口播伴侣/20261108_SOP05_AI商业认知口播_极限压测/`
-- **压测命题**：打造一条真人级商业主播口播视频，并在主播身侧/安全区叠加 `adu-motion-video` 工业级伴侣数据浮层与金句字卡（时长 `20~30 秒`）。
-- **必须动用的顶级能力组合**：
-  1. **Colab `Z-Image-Turbo` (`colab_image_gen`)**：生成高质感演播室商业主播定妆首帧（采用三分法构图，为主播右侧预留伴动浮层安全区）。
-  2. **Colab A100 `MiniMax-H3` (`minimax_h3_colab --mode fl2va`)**：驱动主播定妆照生成自然手势、呼吸感与精准中文口型对白的主播A-Roll视频轨。
-  3. **`motionkit` + `face_occlusion_check`**：挂载伴侣动效卡片，强制通过 [`face_occlusion_check`](file:///home/antigravity/qihao1226/AIStudio/bin/face_occlusion_check)（面部避障间距 $\ge 120\text{px}$、底部 `220px` 字幕隔离带零遮挡）与 [`film_gatekeeper`](file:///home/antigravity/qihao1226/AIStudio/bin/film_gatekeeper) 验收。
+- **压测命题**：基于已有或本地合成的商业主播口播 A-Roll 视频轨，在主播身侧安全区叠加 `adu-motion-video` 工业级伴侣数据浮层、逻辑推演图与金句字卡（时长 `20~30 秒`）。
+- **核心原生工序（默认纯 Antigravity 本地闭环）**：
+  1. **`motionkit` 伴动浮层构建**：根据口播逐词时间戳，在主播身侧三分法安全区动态弹出玻璃拟态数据卡与金句高亮。
+  2. **`face_occlusion_check` 硬核避障门禁**：强制通过 [`face_occlusion_check`](file:///home/antigravity/qihao1226/AIStudio/bin/face_occlusion_check)（面部避障间距 $\ge 120\text{px}$、底部 `220px` 字幕隔离带零遮挡）与 [`film_gatekeeper`](file:///home/antigravity/qihao1226/AIStudio/bin/film_gatekeeper) 验收。（注：仅当无现成口播视频且明确需要生成虚拟主播时，才按需调用 Colab `MiniMax-H3`）。
 
 ---
 
-### 💻 第 6 轮压测：`AG_SOP_06` · 极客架构与概念演示线（Jacky-Motion 单聚光灯 + 零乱码架构推演）
+### 💻 第 6 轮压测：`AG_SOP_06` · 极客架构与概念演示线（Jacky-Motion 单聚光灯 + 零乱码架构推演，零 Colab 强绑）
 - **参考手册**：[`docs/sops/AG_SOP_06_v3.0.md`](file:///home/antigravity/qihao1226/AIStudio/docs/sops/AG_SOP_06_v3.0.md)
 - **Google Drive 交付目录**：`内容生产/06_极客演示导演/20261108_SOP06_多智能体云端工厂架构_极限压测/`
 - **压测命题**：《揭秘 Antigravity + Colab + Drive 云端视频工厂底层架构》（时长 `30~40 秒`，深色极客终端美学 + 动态数据流聚光灯推演）。
-- **必须动用的顶级能力组合**：
-  1. **Colab `Z-Image-Turbo` (`colab_image_gen`)**：生成高分辨率深色赛博架构隐喻过场底图（含精准中英文模块标签）。
-  2. **Colab `Kokoro-82M` (`colab_voice_gen --voice zm_yunyang --with-timestamps`)**：生成沉稳极客技术叙事男声与毫秒级逐词时间戳。
-  3. **`jacky-validate` + `cognitive_load_linter`**：确保同屏单聚光灯焦点、高对比度深色背景、零未解析占位符、**零 Emoji 豆腐块 (`☒`) 乱码**，并通过 [`film_gatekeeper`](file:///home/antigravity/qihao1226/AIStudio/bin/film_gatekeeper) 终审。
+- **核心原生工序（纯 Antigravity 本地闭环）**：
+  1. **`Jacky-motion` 极客深色拓扑舞台**：纯代码 SVG/HTML5 构建三层云端协同架构图，随语音叙事逐级点亮当前讲解模块（单聚光灯焦点），其余模块自动降暗虚化。
+  2. **`jacky-validate` + `cognitive_load_linter` 硬核门禁**：确保同屏单聚光灯焦点、高对比度深色背景、零未解析占位符、**零 Emoji 豆腐块 (`☒`) 乱码**，并通过 [`film_gatekeeper`](file:///home/antigravity/qihao1226/AIStudio/bin/film_gatekeeper) 终审。
 
 ---
 

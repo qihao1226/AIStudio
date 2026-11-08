@@ -67,13 +67,11 @@ search_styles "Oppenheimer" > ./00_需求界定/style_tokens_alt.json
 ```
 - 文案严格按 **3.7 字/秒** 第一人称深度叙事撰写，落盘至 `./01_文案/文案_v3.md`。
 
-### 站 2 & 站 3：物证检索、Colab 差额补给与连续帧抽样核验
-```bash
-# 2. 若需生成高清 1080p 时代背景底图或高精度 TTS 配音，直接调用 SOP 04 Colab GPU 算力车间
-python3 /home/antigravity/qihao1226/AIStudio/scripts/sop04_colab_orchestrator.py \
-  --job-dir ./03_素材/colab_job --session sop01-gpu
+### 站 2 & 站 3：真实物证装配、代码级 2.5D 舞台构建与连续帧核验（默认零 Colab 依赖）
+> **【算力解耦原则】**：SOP 01 是以**真实物证链 + 数字可视化图表 + Stage25D 视差运镜**为核心的本地高吞吐产线，**默认全程在 Antigravity 本地闭环完成，不调用 Colab GPU**！仅当特定分镜极端缺失历史纪实底图、且本地素材无法替代时，才允许按需单点调用 `colab_image_gen`。
 
-# 3. 对视频物证生成 4x3 (12格) 连续帧物证联系表
+```bash
+# 2. 对本地真实视频物证/演讲切片生成 4x3 (12格) 连续帧物证联系表
 wallstreet-strip ./03_素材/raw_keynote.mp4 0.0 15.0 12 ./08_判据/evidence_contact_sheet.jpg 4 --w 480
 ```
 
