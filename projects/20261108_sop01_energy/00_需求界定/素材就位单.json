@@ -1,0 +1,18 @@
+{
+  "project_name": "20261108_SOP01_AI算力能源战争_极限压测",
+  "sop_id": "AG_SOP_01",
+  "title": "AI 算力尽头是能源：为什么科技巨头正在全球抢购核电站？",
+  "aspect_ratio": "16:9",
+  "resolution": "1920x1080",
+  "fps": 30,
+  "target_duration_range": "30-45s",
+  "target_lufs": -16.0,
+  "style_preset": "Oppenheimer",
+  "primary_models": [
+    "Tongyi-MAI/Z-Image-Turbo",
+    "Comfy-Org/MiniMax-H3",
+    "hexgrad/Kokoro-82M",
+    "mobiuslabsgmbh/faster-whisper-large-v3-turbo"
+  ],
+  "delivery_drive_folder": "1FHApfkCr9Xq76E4gTAVR5i3weVsRTmJc/01_真素材数字可视化/20261108_SOP01_AI算力能源战争_极限压测/"
+}

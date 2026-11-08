@@ -450,11 +450,27 @@ class MultimodalEngine:
                 pipe = self._get_kokoro_pipe(lang_code)
                 t0 = time.time()
                 audio_chunks = []
-                for _, _, audio in pipe(text, voice=norm_voice, speed=speed):
-                    if audio is not None:
-                        audio_chunks.append(
-                            audio.cpu().numpy() if hasattr(audio, "cpu") else np.asarray(audio)
-                        )
+                # Split text into sentence clauses to prevent 510-token truncation in misaki/kokoro
+                import re
+                parts = [p.strip() for p in re.split(r'([。！？\n]+)', text) if p.strip()]
+                sentences = []
+                curr = ""
+                for part in parts:
+                    curr += part
+                    if re.search(r'[。！？\n]$', part):
+                        sentences.append(curr)
+                        curr = ""
+                if curr:
+                    sentences.append(curr)
+                if not sentences:
+                    sentences = [text]
+
+                for s in sentences:
+                    for _, _, audio in pipe(s, voice=norm_voice, speed=speed):
+                        if audio is not None:
+                            audio_chunks.append(
+                                audio.cpu().numpy() if hasattr(audio, "cpu") else np.asarray(audio)
+                            )
                 if not audio_chunks:
                     raise RuntimeError("Kokoro returned empty audio chunks")
                 full_audio = np.concatenate(audio_chunks)

@@ -1,0 +1,38 @@
+[
+  {
+    "src": "/home/antigravity/qihao1226/AIStudio/projects/20261108_sop01_energy/03_素材/shot1_clip.mp4",
+    "in": 0.0,
+    "out": 3.5,
+    "note": "【序幕 · 算力图腾与能源宿命】AI 的尽头不是算法，而是能源。"
+  },
+  {
+    "src": "/home/antigravity/qihao1226/AIStudio/projects/20261108_sop01_energy/03_素材/shot2_nuclear_pan.mp4",
+    "in": 0.0,
+    "out": 7.7,
+    "note": "【全景展开 · 核电机组与数据中心的共生】为了喂饱数以百万计的芯片集群，科技巨头正以史无前例的速度全球疯抢核电站。"
+  },
+  {
+    "src": "/home/antigravity/qihao1226/AIStudio/projects/20261108_sop01_energy/03_素材/shot3_clip.mp4",
+    "in": 0.0,
+    "out": 7.3,
+    "note": "【硬核物证 · 华尔街与 PJM 260GW 接入排队】华尔街与 PJM 最新电网数据显示，全美数据中心接入排队已突破 260 吉瓦。"
+  },
+  {
+    "src": "/home/antigravity/qihao1226/AIStudio/projects/20261108_sop01_energy/03_素材/shot4_datacenter_h3.mp4",
+    "in": 0.0,
+    "out": 4.3,
+    "note": "【微观工业 · 液冷管道与芯片阵列的轰鸣】微软重启三里岛，亚马逊买断核电机组，"
+  },
+  {
+    "src": "/home/antigravity/qihao1226/AIStudio/projects/20261108_sop01_energy/03_素材/shot5_clip.mp4",
+    "in": 0.0,
+    "out": 4.0,
+    "note": "【监管铁证 · SEC 10-K 合同文件解密】清洁基荷电力已成为最硬核的算力通胀物证。"
+  },
+  {
+    "src": "/home/antigravity/qihao1226/AIStudio/projects/20261108_sop01_energy/03_素材/shot6_clip.mp4",
+    "in": 0.0,
+    "out": 8.3,
+    "note": "【终局升华 · 地缘算力核裂变霸权】谁能牢牢掌控源源不断的核裂变电能，谁就能真正锁定下一个十年的全球算力霸权。"
+  }
+]

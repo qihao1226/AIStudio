@@ -1,0 +1,26 @@
+[Script Info]
+Title: AI算力尽头是能源
+ScriptType: v4.00+
+WrapStyle: 0
+ScaledBorderAndShadow: yes
+YCbCr Matrix: TV.709
+PlayResX: 1920
+PlayResY: 1080
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,DejaVu Sans,44,&H00E8EBED,&H00509AFF,&H00090B0D,&H80090B0D,-1,0,0,0,100,100,1.2,0,1,2.5,1.5,2,40,40,65,1
+Style: CategoryBadge,DejaVu Sans,24,&H00509AFF,&H00E8EBED,&H00090B0D,&H90090B0D,1,0,0,0,100,100,2.5,0,1,1.5,1.0,7,80,40,60,1
+Style: MetricOverlay,DejaVu Sans,36,&H00509AFF,&H00E8EBED,&H00090B0D,&H90090B0D,1,0,0,0,100,100,2.0,0,1,2.0,1.0,9,80,80,60,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 1,0:00:00.00,0:00:35.10,CategoryBadge,,0,0,0,,{\an7}YOUAI SPECIAL REPORT  //  AI COMPUTING & ENERGY BOTTLENECK
+Dialogue: 1,0:00:11.20,0:00:18.50,MetricOverlay,,0,0,0,,{\an9}PJM INTERCONNECTION // 260 GW BACKLOG
+Dialogue: 1,0:00:22.80,0:00:26.80,MetricOverlay,,0,0,0,,{\an9}SEC 10-K FILING // 835MW NUCLEAR RESTART
+Dialogue: 0,0:00:00.00,0:00:03.50,Default,,0,0,0,,AI 的尽头不是算法，而是能源。
+Dialogue: 0,0:00:03.50,0:00:11.20,Default,,0,0,0,,为了喂饱数以百万计的芯片集群，科技巨头正以史无前例的速度全球疯抢核电站。
+Dialogue: 0,0:00:11.20,0:00:18.50,Default,,0,0,0,,华尔街与 PJM 最新电网数据显示，全美数据中心接入排队已突破 260 吉瓦。
+Dialogue: 0,0:00:18.50,0:00:22.80,Default,,0,0,0,,微软重启三里岛，亚马逊买断核电机组，
+Dialogue: 0,0:00:22.80,0:00:26.80,Default,,0,0,0,,清洁基荷电力已成为最硬核的算力通胀物证。
+Dialogue: 0,0:00:26.80,0:00:35.10,Default,,0,0,0,,谁能牢牢掌控源源不断的核裂变电能，谁就能真正锁定下一个十年的全球算力霸权。
