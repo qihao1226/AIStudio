@@ -1,0 +1,192 @@
+#!/usr/bin/env python3
+"""
+YOUAI Cloud Video Factory — `minimax_h3_image_colab` CLI (v3.5)
+===============================================================
+Orchestrator for running MiniMax-H3-Image (Native 4K T2I & 16-Image Reference Edit)
+on Google Colab A100 / L4 / H100 GPUs via our Pure-HTTP RPC Bridge.
+"""
+
+import argparse
+import json
+import os
+import subprocess
+import sys
+import tempfile
+import time
+from pathlib import Path
+
+REPO_ROOT = Path("/home/antigravity/qihao1226/AIStudio")
+REMOTE_WORKER = REPO_ROOT / "scripts" / "colab_minimax_h3_image_worker.py"
+COLAB_BIN = "/home/antigravity/.local/bin/colab"
+
+
+def run_colab(args: list, timeout: int = 300, check: bool = True) -> str:
+    env = dict(os.environ, PATH=f"/home/antigravity/.local/bin:/shared/user/.gemini/youai/bin:{os.environ.get('PATH', '')}")
+    p = subprocess.run(
+        [COLAB_BIN, *map(str, args)],
+        capture_output=True,
+        text=True,
+        env=env,
+        timeout=timeout,
+        stdin=subprocess.DEVNULL,
+    )
+    out = (p.stdout or "") + (p.stderr or "")
+    if check and p.returncode != 0:
+        raise RuntimeError(f"colab {' '.join(map(str, args))} failed ({p.returncode}):\n{out[-1500:]}")
+    return out
+
+
+def exec_py(session: str, code: str, timeout: int = 90) -> str:
+    with tempfile.NamedTemporaryFile("w", suffix=".py", delete=False, encoding="utf-8") as f:
+        f.write(code)
+        tmp_name = f.name
+    try:
+        return run_colab(["exec", "-s", session, "-f", tmp_name, "--timeout", str(timeout)], timeout=timeout + 30)
+    finally:
+        Path(tmp_name).unlink(missing_ok=True)
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description="YOUAI Colab A100/L4 MiniMax-H3-Image 4K Generator & Multi-Reference Editor")
+    ap.add_argument("--prompt-file", help="Path to UTF-8 prompt file")
+    ap.add_argument("--prompt", help="Inline prompt string")
+    ap.add_argument("--image", action="append", default=[], help="1-16 reference images for character/asset consistency and editing")
+    ap.add_argument("--resolution", choices=["4k", "2k", "1k"], default="4k", help="Target resolution (default: 4k / 16MP)")
+    ap.add_argument("--aspect", choices=["16:9", "9:16", "1:1", "21:9", "4:3", "3:4"], default="16:9", help="Aspect ratio (default: 16:9)")
+    ap.add_argument("--steps", type=int, default=6, help="Distilled inference steps (default: 6)")
+    ap.add_argument("--seed", type=int, default=42, help="Sampling seed")
+    ap.add_argument("--output", required=True, help="Local output image path (.png)")
+    ap.add_argument("--gpu", choices=["A100", "L4", "H100"], default="A100", help="Colab GPU accelerator variant")
+    ap.add_argument("--session", default="youai-h3-a100", help="Colab session name")
+    ap.add_argument("--stop-after", action="store_true", help="Stop Colab GPU session immediately after completion")
+    args = ap.parse_args()
+
+    prompt_text = Path(args.prompt_file).read_text(encoding="utf-8") if args.prompt_file else (args.prompt or "")
+    if not prompt_text.strip():
+        raise ValueError("Please provide --prompt-file or --prompt")
+
+    if len(args.image) > 16:
+        raise ValueError(f"MiniMax H3-Image supports up to 16 reference images, but {len(args.image)} provided.")
+
+    print(f"[minimax_h3_image_colab] Checking Colab quota & active sessions...", flush=True)
+    sessions_out = run_colab(["sessions"], check=False)
+    if args.session not in sessions_out:
+        print(f"[minimax_h3_image_colab] Allocating {args.gpu} High-RAM session '{args.session}'...", flush=True)
+        cmd = ["new", "-s", args.session, "--gpu", args.gpu]
+        if args.gpu == "A100":
+            cmd.append("--high-mem")
+        run_colab(cmd, timeout=600)
+    else:
+        print(f"[minimax_h3_image_colab] Reusing active session '{args.session}'", flush=True)
+
+    try:
+        exec_py(args.session, "import os; os.makedirs('/content/h3_img_job/inputs', exist_ok=True); print('READY')")
+        print(f"[minimax_h3_image_colab] Uploading remote worker -> /content/h3_img_job/colab_minimax_h3_image_worker.py...", flush=True)
+        run_colab(["upload", "-s", args.session, str(REMOTE_WORKER), "/content/h3_img_job/colab_minimax_h3_image_worker.py"])
+
+        remote_imgs = []
+        for idx, img_p in enumerate(args.image, 1):
+            p = Path(img_p).resolve()
+            if not p.is_file():
+                raise FileNotFoundError(f"Reference image not found: {p}")
+            r_rel = f"inputs/ref_{idx:02d}{p.suffix}"
+            run_colab(["upload", "-s", args.session, str(p), f"/content/h3_img_job/{r_rel}"])
+            remote_imgs.append(r_rel)
+
+        manifest = {
+            "jobs": [
+                {
+                    "id": "img_01",
+                    "prompt": prompt_text,
+                    "resolution": args.resolution,
+                    "aspect": args.aspect,
+                    "steps": args.steps,
+                    "seed": args.seed,
+                    "images": remote_imgs,
+                }
+            ]
+        }
+        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8") as f:
+            json.dump(manifest, f, indent=2, ensure_ascii=False)
+            tmp_manifest = f.name
+        run_colab(["upload", "-s", args.session, tmp_manifest, "/content/h3_img_job/manifest.json"])
+        Path(tmp_manifest).unlink(missing_ok=True)
+
+        mode_str = f"Multi-Reference Edit ({len(remote_imgs)} images)" if remote_imgs else "Text-to-Image"
+        print(f"🚀 [minimax_h3_image_colab] Launching MiniMax-H3-Image [{mode_str}, {args.resolution.upper()}, {args.aspect}] in background...", flush=True)
+        launcher = (
+            "import subprocess\n"
+            "subprocess.Popen(\n"
+            "    ['python3', '/content/h3_img_job/colab_minimax_h3_image_worker.py'],\n"
+            "    cwd='/content/h3_img_job',\n"
+            "    stdout=open('/content/h3_img_job/worker.log', 'w'),\n"
+            "    stderr=subprocess.STDOUT,\n"
+            "    start_new_session=True,\n"
+            ")\n"
+            "print('LAUNCHED')\n"
+        )
+        exec_py(args.session, launcher)
+
+        last_stage = None
+        last_log_count = 0
+        t0 = time.time()
+        out_file = None
+
+        while time.time() - t0 < 1200:
+            time.sleep(6)
+            try:
+                res_txt = exec_py(
+                    args.session,
+                    "import json, os; print('===STATUS===' + (open('/content/h3_img_job/status.json').read() if os.path.exists('/content/h3_img_job/status.json') else '{}'))",
+                    timeout=30,
+                )
+            except Exception as e:
+                print(f"  [poll] transient connection glitch: {e}", flush=True)
+                continue
+
+            if "===STATUS===" not in res_txt:
+                continue
+            try:
+                status_data = json.loads(res_txt.split("===STATUS===")[1].strip())
+            except Exception:
+                continue
+
+            stage = status_data.get("stage")
+            if stage != last_stage:
+                print(f"  ⚡ [{int(time.time() - t0)}s] Stage -> {stage}", flush=True)
+                last_stage = stage
+
+            logs = status_data.get("logs", [])
+            if len(logs) > last_log_count:
+                for line in logs[last_log_count:]:
+                    print(f"    {line}", flush=True)
+                last_log_count = len(logs)
+
+            job_info = status_data.get("jobs", {}).get("img_01", {})
+            if job_info.get("status") == "done":
+                out_file = job_info.get("file")
+                print(f"  🎉 [{int(time.time() - t0)}s] Job img_01 completed successfully! ({job_info.get('width')}x{job_info.get('height')})", flush=True)
+                break
+            if job_info.get("status") == "error":
+                raise RuntimeError(f"H3-Image generation failed: {job_info.get('error')}")
+            if status_data.get("done") and status_data.get("error"):
+                raise RuntimeError(f"Worker failed: {status_data.get('error')}")
+        else:
+            raise TimeoutError("Timed out waiting for MiniMax-H3-Image generation (20 minutes).")
+
+        out_local = Path(args.output).resolve()
+        out_local.parent.mkdir(parents=True, exist_ok=True)
+        print(f"📥 [minimax_h3_image_colab] Downloading 4K image -> {out_local}...", flush=True)
+        run_colab(["download", "-s", args.session, f"/content/h3_img_job/out/{out_file}", str(out_local)])
+        print(f"✅ [minimax_h3_image_colab] Complete! Saved to {out_local} ({out_local.stat().st_size / 2**20:.2f} MiB)", flush=True)
+        return 0
+
+    finally:
+        if args.stop_after:
+            print(f"🛑 [minimax_h3_image_colab] Stopping Colab session '{args.session}' to halt compute billing...", flush=True)
+            run_colab(["stop", "-s", args.session], check=False)
+            print("✅ [minimax_h3_image_colab] Session released. Zero idle waste.", flush=True)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

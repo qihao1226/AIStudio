@@ -51,22 +51,51 @@ def ensure_session(session_name: str, gpu: str) -> None:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Top-Tier Open-Source Colab Image Generator (Z-Image-Turbo / FLUX.1-schnell)")
+    parser = argparse.ArgumentParser(description="Top-Tier Open-Source Colab Image Generator (Z-Image-Turbo / FLUX.1-schnell / MiniMax-H3-Image)")
     parser.add_argument("--prompt", required=True, help="Text prompt (supports English & Chinese typography)")
     parser.add_argument("--output", required=True, help="Local output image path (.png or .jpg)")
-    parser.add_argument("--model", default="z-image-turbo", choices=["z-image-turbo", "flux-schnell", "sdxl-turbo"], help="Model engine (default: z-image-turbo)")
-    parser.add_argument("--aspect", default="16:9", choices=["16:9", "9:16", "1:1"], help="Aspect ratio (default: 16:9 -> 1920x1080)")
+    parser.add_argument("--model", default="z-image-turbo", choices=["z-image-turbo", "flux-schnell", "sdxl-turbo", "minimax-h3-image"], help="Model engine (default: z-image-turbo)")
+    parser.add_argument("--aspect", default="16:9", choices=["16:9", "9:16", "1:1", "21:9", "4:3", "3:4"], help="Aspect ratio (default: 16:9)")
+    parser.add_argument("--resolution", default="4k", choices=["4k", "2k", "1k"], help="Resolution for minimax-h3-image (default: 4k)")
+    parser.add_argument("--ref-images", nargs="*", default=[], help="1-16 reference images for MiniMax-H3-Image")
     parser.add_argument("--steps", type=int, default=None, help="Inference steps override")
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
-    parser.add_argument("--session", default="youai-mm-l4", help="Colab session name")
-    parser.add_argument("--gpu", default="L4", choices=["L4", "A100", "T4"], help="Colab GPU tier")
+    parser.add_argument("--session", default=None, help="Colab session name")
+    parser.add_argument("--gpu", default=None, choices=["L4", "A100", "T4", "H100"], help="Colab GPU tier")
     parser.add_argument("--mount-drive", action="store_true", help="Mount 5TB Google Drive Model Vault before running")
     parser.add_argument("--keep-alive", action="store_true", help="Keep Colab session alive after completion for batch tasks")
     args = parser.parse_args()
 
-    ensure_session(args.session, args.gpu)
+    # Route MiniMax-H3-Image directly to specialized minimax_h3_image_colab pipeline
+    if args.model == "minimax-h3-image":
+        h3_bin = Path(__file__).resolve().parent / "minimax_h3_image_colab"
+        gpu = args.gpu or "A100"
+        session = args.session or ("youai-h3-a100" if gpu == "A100" else "youai-mm-l4")
+        cmd = [
+            str(h3_bin),
+            "--prompt", args.prompt,
+            "--output", args.output,
+            "--resolution", args.resolution,
+            "--aspect", args.aspect,
+            "--gpu", gpu,
+            "--session", session,
+            "--seed", str(args.seed),
+        ]
+        if args.steps:
+            cmd.extend(["--steps", str(args.steps)])
+        for r_img in args.ref_images:
+            cmd.extend(["--image", str(r_img)])
+        if not args.keep_alive:
+            cmd.append("--stop-after")
+        print(f"🔀 [colab_image_gen] Routing request to MiniMax-H3-Image ({args.resolution.upper()}, {gpu})...", flush=True)
+        res = subprocess.run(cmd)
+        sys.exit(res.returncode)
+
+    gpu = args.gpu or "L4"
+    session = args.session or "youai-mm-l4"
+    ensure_session(session, gpu)
     if args.mount_drive:
-        run_cmd([COLAB_BIN, "drivemount", "-s", args.session], check=False)
+        run_cmd([COLAB_BIN, "drivemount", "-s", session], check=False)
 
     job_id = uuid.uuid4().hex[:8]
     remote_worker = "/content/colab_multimodal_worker.py"

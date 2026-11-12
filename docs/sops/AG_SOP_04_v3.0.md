@@ -55,23 +55,28 @@ export PATH="/home/antigravity/.local/bin:/shared/user/.gemini/youai/bin:$PATH"
 
 ### 第 2 步：一键调度 Google Colab GPU 顶级开源多模态矩阵
 ```bash
-# 方式 A：单点独立调用三大王牌 CLI（按需随时生成分镜图、配音克隆或音画同出视频）
+# 方式 A：单点独立调用四大王牌 CLI（按需随时生成分镜图、4K母带/多图参考、配音克隆或音画同出视频）
 # 1) 1080p 写实生图 & 中英双语海报渲染 (Z-Image-Turbo / FLUX.1-schnell on Colab L4)
 colab_image_gen --prompt '科技感数据中心，中央全息屏显示金色中文「云端视频工厂」' --model z-image-turbo --aspect 16:9 --output ./03_素材/shot_001.png
 
-# 2) 演播室级中文旁白 (Kokoro-82M) 或 5 秒零样本声音克隆 (F5-TTS) + 毫秒级逐词时间戳 (.words.json)
+# 2) 原生 4K 超清大图与 1~16 张多参考图角色一致性生成 (MiniMax-H3-Image on Colab A100/L4)
+minimax_h3_image_colab --prompt "4K 商业特写摄影，科技感实验室..." --resolution 4k --aspect 16:9 --output ./03_素材/shot_4k.png --stop-after
+# 或通过统一 CLI 直接调用：
+colab_image_gen --model minimax-h3-image --prompt "4K 商业特写..." --resolution 4k --output ./03_素材/shot_4k.png
+
+# 3) 演播室级中文旁白 (Kokoro-82M) 或 5 秒零样本声音克隆 (F5-TTS) + 毫秒级逐词时间戳 (.words.json)
 colab_voice_gen --text "欢迎来到云端视频生产工厂，每一帧都是工业级母带。" --voice zm_yunjian --with-timestamps --output ./03_素材/generated_tts.wav
 colab_voice_gen --text "这是零样本克隆出的专属主播音色。" --engine f5-tts --ref-audio ./03_素材/speaker_ref_5s.wav --output ./03_素材/cloned_tts.wav
 
-# 3) 角色参考图生成音画同步对口型视频 (MiniMax-H3 Ref2VA / FL2VA on Colab A100)
-minimax_h3_colab --mode ref2va --image ./03_素材/shot_001.png --prompt "Cinematic medium shot..." --speech "[Mandarin] 欢迎来到云端视频工厂。" --output ./03_素材/shot_001_video.mp4
+# 4) 角色参考图生成音画同步对口型视频 (MiniMax-H3 Ref2VA / FL2VA on Colab A100)
+minimax_h3_colab --mode reference --image ./03_素材/shot_4k.png --prompt-file ./work/h3_prompt.txt --output ./03_素材/shot_001_video.mp4 --stop-after
 
 # 方式 B：工程级批量工单全自动编排 (sop04_colab_orchestrator.py)
 python3 /home/antigravity/qihao1226/AIStudio/scripts/sop04_colab_orchestrator.py \
   --job-dir ./work/colab_job \
   --session youai-mm-l4
 ```
-- 底层由 [`colab_multimodal_worker.py`](file:///home/antigravity/qihao1226/AIStudio/scripts/colab_multimodal_worker.py) (v3.5) 与 [`colab_minimax_h3_worker.py`](file:///home/antigravity/qihao1226/AIStudio/scripts/colab_minimax_h3_worker.py) 驱动。
+- 底层由 [`colab_multimodal_worker.py`](file:///home/antigravity/qihao1226/AIStudio/scripts/colab_multimodal_worker.py) (v3.5)、[`colab_minimax_h3_image_worker.py`](file:///home/antigravity/qihao1226/AIStudio/scripts/colab_minimax_h3_image_worker.py) 及 [`colab_minimax_h3_worker.py`](file:///home/antigravity/qihao1226/AIStudio/scripts/colab_minimax_h3_worker.py) 驱动。技术规范详见 [`docs/MINIMAX_H3_IMAGE_SPEC.md`](file:///home/antigravity/qihao1226/AIStudio/docs/MINIMAX_H3_IMAGE_SPEC.md)。
 
 ### 第 3 步：音频母带混音与 4 层 OpenFilm 工业总装
 ```bash
