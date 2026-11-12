@@ -16,6 +16,9 @@ import time
 from pathlib import Path
 
 REPO_ROOT = Path("/home/antigravity/qihao1226/AIStudio")
+sys.path.insert(0, str(REPO_ROOT / "src"))
+from aistudio.colab_meter import ColabMeter
+
 REMOTE_WORKER = REPO_ROOT / "scripts" / "colab_minimax_h3_worker.py"
 COLAB_BIN = "/home/antigravity/.local/bin/colab"
 
@@ -77,6 +80,12 @@ def main() -> int:
         run_colab(cmd, timeout=600)
     else:
         print(f"[minimax_h3_colab] Reusing active session '{args.session}'", flush=True)
+
+    meter = ColabMeter(
+        task_name=f"MiniMax-H3-Video ({args.mode} {args.width}x{args.height})",
+        gpu=args.gpu,
+        session=args.session,
+    ).start()
 
     try:
         exec_py(args.session, "import os; os.makedirs('/content/h3_job/inputs', exist_ok=True); print('READY')")
@@ -150,6 +159,8 @@ def main() -> int:
         if args.stop_after:
             print(f"[minimax_h3_colab] Stopping session '{args.session}' to save Compute Units...", flush=True)
             run_colab(["stop", "-s", args.session], check=False)
+        rec = meter.finish()
+        meter.print_card(rec)
     return 0
 
 

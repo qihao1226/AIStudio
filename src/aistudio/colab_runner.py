@@ -13,6 +13,8 @@ from aistudio.config import (
     GOOGLE_DRIVE_BASE_DIR,
 )
 
+from aistudio.colab_meter import ColabMeter
+
 logger = logging.getLogger("aistudio.colab_runner")
 
 COLAB_BIN = Path(os.environ.get("COLAB_BIN", "/home/antigravity/.local/bin/colab"))
@@ -63,6 +65,12 @@ def run_project_on_colab_gpu(
     if high_mem:
         cmd_new.append("--high-mem")
 
+    meter = ColabMeter(
+        task_name=f"Project-Batch ({project_dir.name})",
+        gpu=gpu_type,
+        session=session_name,
+    ).start()
+
     print(f"🚀 [Colab CLI] 正在申请 {gpu_type} GPU 瞬态虚拟机 ({session_name})...", flush=True)
     try:
         subprocess.run(cmd_new, check=True)
@@ -96,3 +104,5 @@ def run_project_on_colab_gpu(
             print("✅ [Colab CLI] 云端 GPU 已彻底释放，零闲置消耗！", flush=True)
         except Exception as e:
             logger.warning(f"Failed to stop session {session_name}: {e}")
+        rec = meter.finish()
+        meter.print_card(rec)

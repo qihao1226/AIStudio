@@ -27,6 +27,10 @@ import argparse
 import subprocess
 from pathlib import Path
 
+REPO_ROOT = Path("/home/antigravity/qihao1226/AIStudio")
+sys.path.insert(0, str(REPO_ROOT / "src"))
+from aistudio.colab_meter import ColabMeter
+
 COLAB_BIN = "/home/antigravity/.local/bin/colab"
 WORKER_SCRIPT = "/home/antigravity/qihao1226/AIStudio/scripts/colab_multimodal_worker.py"
 
@@ -73,84 +77,95 @@ def main():
     if args.mount_drive:
         run_cmd([COLAB_BIN, "drivemount", "-s", args.session], check=False)
 
-    job_id = uuid.uuid4().hex[:8]
-    remote_worker = "/content/colab_multimodal_worker.py"
-    remote_out = f"/content/youai_tts_{job_id}.wav"
-    remote_ts = f"/content/youai_tts_{job_id}.words.json"
-    remote_status = f"/content/youai_status_{job_id}.json"
-    remote_log = f"/content/youai_log_{job_id}.txt"
+    meter = ColabMeter(
+        task_name=f"Voice-Gen ({args.engine} {args.voice or 'ref'})",
+        gpu=args.gpu,
+        session=args.session,
+    ).start()
 
-    print(f"📤 [colab_voice_gen] Syncing worker v3.5 to session '{args.session}'...", flush=True)
-    run_cmd([COLAB_BIN, "upload", "-s", args.session, WORKER_SCRIPT, remote_worker], check=True)
+    try:
+        job_id = uuid.uuid4().hex[:8]
+        remote_worker = "/content/colab_multimodal_worker.py"
+        remote_out = f"/content/youai_tts_{job_id}.wav"
+        remote_ts = f"/content/youai_tts_{job_id}.words.json"
+        remote_status = f"/content/youai_status_{job_id}.json"
+        remote_log = f"/content/youai_log_{job_id}.txt"
 
-    remote_ref = None
-    if args.ref_audio:
-        ref_p = Path(args.ref_audio).resolve()
-        if not ref_p.exists():
-            raise FileNotFoundError(f"Reference audio not found: {ref_p}")
-        remote_ref = f"/content/youai_ref_{job_id}{ref_p.suffix}"
-        print(f"📤 [colab_voice_gen] Uploading reference audio -> {remote_ref}", flush=True)
-        run_cmd([COLAB_BIN, "upload", "-s", args.session, str(ref_p), remote_ref], check=True)
+        print(f"📤 [colab_voice_gen] Syncing worker v3.5 to session '{args.session}'...", flush=True)
+        run_cmd([COLAB_BIN, "upload", "-s", args.session, WORKER_SCRIPT, remote_worker], check=True)
 
-    cmd_args = [
-        "python3", remote_worker,
-        "--task", "tts",
-        "--prompt", args.text,
-        "--output", remote_out,
-        "--voice", args.voice,
-        "--engine", args.engine,
-        "--speed", str(args.speed),
-        "--status-file", remote_status,
-    ]
-    if remote_ref:
-        cmd_args.extend(["--ref-audio", remote_ref])
-    if args.ref_text:
-        cmd_args.extend(["--ref-text", args.ref_text])
-    if args.with_timestamps:
-        cmd_args.append("--with-timestamps")
+        remote_ref = None
+        if args.ref_audio:
+            ref_p = Path(args.ref_audio).resolve()
+            if not ref_p.exists():
+                raise FileNotFoundError(f"Reference audio not found: {ref_p}")
+            remote_ref = f"/content/youai_ref_{job_id}{ref_p.suffix}"
+            print(f"📤 [colab_voice_gen] Uploading reference audio -> {remote_ref}", flush=True)
+            run_cmd([COLAB_BIN, "upload", "-s", args.session, str(ref_p), remote_ref], check=True)
 
-    launcher_code = f"""
+        cmd_args = [
+            "python3", remote_worker,
+            "--task", "tts",
+            "--prompt", args.text,
+            "--output", remote_out,
+            "--voice", args.voice,
+            "--engine", args.engine,
+            "--speed", str(args.speed),
+            "--status-file", remote_status,
+        ]
+        if remote_ref:
+            cmd_args.extend(["--ref-audio", remote_ref])
+        if args.ref_text:
+            cmd_args.extend(["--ref-text", args.ref_text])
+        if args.with_timestamps:
+            cmd_args.append("--with-timestamps")
+
+        launcher_code = f"""
 import subprocess
 with open({remote_log!r}, "w") as lf:
     subprocess.Popen({cmd_args!r}, stdout=lf, stderr=subprocess.STDOUT, start_new_session=True)
 print("LAUNCHED_TTS_JOB")
 """
-    launcher_file = Path(f"/tmp/launch_tts_{job_id}.py")
-    launcher_file.write_text(launcher_code, encoding="utf-8")
-    run_cmd([COLAB_BIN, "exec", "-s", args.session, "-f", str(launcher_file)], check=True)
-    launcher_file.unlink(missing_ok=True)
+        launcher_file = Path(f"/tmp/launch_tts_{job_id}.py")
+        launcher_file.write_text(launcher_code, encoding="utf-8")
+        run_cmd([COLAB_BIN, "exec", "-s", args.session, "-f", str(launcher_file)], check=True)
+        launcher_file.unlink(missing_ok=True)
 
-    local_status = Path(f"/tmp/status_tts_{job_id}.json")
-    t0 = time.time()
-    while time.time() - t0 < 900:
-        time.sleep(4)
-        r = run_cmd([COLAB_BIN, "download", "-s", args.session, remote_status, str(local_status)], check=False)
-        if r.returncode == 0 and local_status.exists():
-            try:
-                st = json.loads(local_status.read_text(encoding="utf-8"))
-                state = st.get("state")
-                print(f"  ⏳ [{int(time.time()-t0)}s] {state}: {st.get('message')}", flush=True)
-                if state == "completed":
-                    break
-                if state == "failed":
-                    raise RuntimeError(f"Remote worker failed: {st.get('message')}\n{st.get('traceback', '')}")
-            except json.JSONDecodeError:
-                pass
-    else:
-        raise TimeoutError("Timed out waiting for remote Colab voice generation.")
+        local_status = Path(f"/tmp/status_tts_{job_id}.json")
+        t0 = time.time()
+        while time.time() - t0 < 900:
+            time.sleep(4)
+            r = run_cmd([COLAB_BIN, "download", "-s", args.session, remote_status, str(local_status)], check=False)
+            if r.returncode == 0 and local_status.exists():
+                try:
+                    st = json.loads(local_status.read_text(encoding="utf-8"))
+                    state = st.get("state")
+                    print(f"  ⏳ [{int(time.time()-t0)}s] {state}: {st.get('message')}", flush=True)
+                    if state == "completed":
+                        break
+                    if state == "failed":
+                        raise RuntimeError(f"Remote worker failed: {st.get('message')}\n{st.get('traceback', '')}")
+                except json.JSONDecodeError:
+                    pass
+        else:
+            raise TimeoutError("Timed out waiting for remote Colab voice generation.")
 
-    local_status.unlink(missing_ok=True)
-    out_p = Path(args.output).resolve()
-    out_p.parent.mkdir(parents=True, exist_ok=True)
-    print(f"📥 [colab_voice_gen] Downloading mastered -14 LUFS WAV -> {out_p}", flush=True)
-    run_cmd([COLAB_BIN, "download", "-s", args.session, remote_out, str(out_p)], check=True)
+        local_status.unlink(missing_ok=True)
+        out_p = Path(args.output).resolve()
+        out_p.parent.mkdir(parents=True, exist_ok=True)
+        print(f"📥 [colab_voice_gen] Downloading mastered -14 LUFS WAV -> {out_p}", flush=True)
+        run_cmd([COLAB_BIN, "download", "-s", args.session, remote_out, str(out_p)], check=True)
 
-    if args.with_timestamps:
-        local_ts = out_p.with_suffix(".words.json")
-        run_cmd([COLAB_BIN, "download", "-s", args.session, remote_ts, str(local_ts)], check=True)
-        print(f"📥 [colab_voice_gen] Downloaded millisecond word timestamps -> {local_ts}", flush=True)
+        if args.with_timestamps:
+            local_ts = out_p.with_suffix(".words.json")
+            run_cmd([COLAB_BIN, "download", "-s", args.session, remote_ts, str(local_ts)], check=True)
+            print(f"📥 [colab_voice_gen] Downloaded millisecond word timestamps -> {local_ts}", flush=True)
 
-    print(f"✅ [colab_voice_gen] Success! Audio saved at: {out_p}", flush=True)
+        print(f"✅ [colab_voice_gen] Success! Audio saved at: {out_p}", flush=True)
+
+    finally:
+        rec = meter.finish()
+        meter.print_card(rec)
 
 
 if __name__ == "__main__":

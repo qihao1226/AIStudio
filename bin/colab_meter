@@ -1,0 +1,103 @@
+#!/usr/bin/env python3
+"""
+colab_meter — YOUAI Colab Compute Unit Balance & Task Accounting CLI
+====================================================================
+Usage:
+  colab_meter             # View current balance, consumption rate, and active assignments
+  colab_meter history     # View audit history of recently executed Colab tasks and CU consumed
+  colab_meter summary     # View aggregate compute unit consumption stats
+"""
+
+import json
+import sys
+from pathlib import Path
+
+REPO_ROOT = Path("/home/antigravity/qihao1226/AIStudio")
+sys.path.insert(0, str(REPO_ROOT / "src"))
+
+from aistudio.colab_meter import fetch_colab_balance, HISTORY_FILES
+
+
+def show_current():
+    bal, rate = fetch_colab_balance()
+    print("┌────────────────────────────────────────────────────────┐")
+    print("│  ⚡ Google Colab 算力单元实时账目                      │")
+    print("├────────────────────────────────────────────────────────┤")
+    print(f"│  • 当前账户余额: {bal:.2f} CU (计算单元)             │" if bal is not None else "│  • 当前账户余额: 获取中...                            │")
+    print(f"│  • 活跃计费费率: {rate:.2f} CU/小时                  │" if rate is not None else "│  • 活跃计费费率: 0.00 CU/小时                         │")
+    status_str = "正常 (零闲置消耗)" if (rate == 0.0 or rate is None) else "运行中 (有活跃扣费实例)"
+    print(f"│  • 计费状态:     {status_str:<38}│")
+    print("└────────────────────────────────────────────────────────┘")
+
+
+def show_history(limit=15):
+    records = []
+    for h_path in HISTORY_FILES:
+        if h_path.exists():
+            for line in h_path.read_text(encoding="utf-8").splitlines():
+                line = line.strip()
+                if line:
+                    try:
+                        records.append(json.loads(line))
+                    except Exception:
+                        pass
+            if records:
+                break
+
+    if not records:
+        print("[colab_meter] 暂无历史任务结算记录。")
+        return
+
+    print(f"\n📋 【Colab 最近 {min(limit, len(records))} 次任务算力消耗审计台账】")
+    print(f"{'时间 (UTC)':<18} | {'任务名称':<25} | {'硬件':<5} | {'耗时':<7} | {'消耗 (CU)':<9} | {'余额':<8}")
+    print("-" * 85)
+    for r in records[-limit:]:
+        t_str = r.get("timestamp", "")[5:16].replace("T", " ")
+        task = r.get("task_name", "")[:24]
+        gpu = r.get("gpu", "GPU")
+        sec = r.get("duration_seconds", 0)
+        dur = f"{int(sec)}s" if sec < 60 else f"{int(sec//60)}m{int(sec%60)}s"
+        cu = f"{r.get('consumed_cu', 0.0):.3f}"
+        rem = f"{r.get('end_balance', 0.0):.1f}" if r.get('end_balance') is not None else "-"
+        print(f"{t_str:<18} | {task:<25} | {gpu:<5} | {dur:<7} | {cu:<9} | {rem:<8}")
+    print()
+
+
+def show_summary():
+    records = []
+    for h_path in HISTORY_FILES:
+        if h_path.exists():
+            for line in h_path.read_text(encoding="utf-8").splitlines():
+                if line.strip():
+                    try:
+                        records.append(json.loads(line.strip()))
+                    except Exception:
+                        pass
+            if records:
+                break
+
+    total_cu = sum(r.get("consumed_cu", 0.0) for r in records)
+    total_sec = sum(r.get("duration_seconds", 0.0) for r in records)
+    bal, _ = fetch_colab_balance()
+
+    print("\n📊 【Colab 任务累计算力支出总报表】")
+    print(f"  • 累计记录任务数: {len(records)} 次")
+    print(f"  • 累计 GPU 运算时长: {int(total_sec // 60)} 分钟 ({total_sec:.1f} 秒)")
+    print(f"  • 累计消耗算力点数: {total_cu:.3f} CU")
+    if bal is not None:
+        print(f"  • 当前账户剩余额度: {bal:.2f} CU")
+    print()
+
+
+def main():
+    cmd = sys.argv[1].lower() if len(sys.argv) > 1 else "status"
+    if cmd in ("history", "log", "ls"):
+        show_history()
+    elif cmd in ("summary", "total", "stat"):
+        show_summary()
+    else:
+        show_current()
+
+
+if __name__ == "__main__":
+    main()
