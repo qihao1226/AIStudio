@@ -22,11 +22,12 @@ def main() -> int:
     parser.add_argument("--output", "-o", required=True, help="Output WAV path")
     parser.add_argument(
         "--engine",
-        choices=["auto", "colab", "piper", "gemini"],
+        choices=["auto", "colab", "kokoro", "index-tts", "voxcpm", "f5-tts", "piper", "gemini"],
         default="auto",
         help="TTS Engine selection (auto: Colab -> Piper fallback; gemini is paid emergency only)"
     )
-    parser.add_argument("--voice", help="Voice name (Colab: zm_yunjian/zm_yunxi/zf_xiaobei; Gemini: Charon/Fenrir; Piper: huayan)")
+    parser.add_argument("--voice", help="Voice name or design description (Colab: zm_yunjian/zm_yunxi/zf_xiaobei; Gemini: Charon/Fenrir; Piper: huayan)")
+    parser.add_argument("--ref-audio", help="Reference WAV for zero-shot voice cloning")
     parser.add_argument("--speed", type=float, default=1.0, help="Speaking speed multiplier")
     parser.add_argument("--with-timestamps", action="store_true", help="Generate Faster-Whisper word-level timestamps (Colab)")
     args = parser.parse_args()
@@ -56,15 +57,22 @@ def main() -> int:
         cmd = [gemini_bin, "--text", text, "-o", str(out_p), "--voice", voice]
         return subprocess.run(cmd).returncode
 
-    # Route 1: Priority Colab Kokoro-82M (Highest quality, completely free)
-    if args.engine in ("auto", "colab"):
+    # Route 1: Colab Engines (Kokoro-82M / IndexTTS-2.5 / VoxCPM2 / F5-TTS)
+    if args.engine in ("auto", "colab", "kokoro", "index-tts", "voxcpm", "f5-tts"):
+        colab_engine = args.engine if args.engine in ("kokoro", "index-tts", "voxcpm", "f5-tts") else "auto"
         voice = args.voice or "zm_yunjian"
-        print(f"[tts_router] [Tier 1 Priority] Invoking Colab Kokoro-82M (voice={voice}, speed={args.speed})...")
-        cmd = [colab_bin, "--text", text, "-o", str(out_p), "--voice", voice, "--speed", str(args.speed)]
+        print(f"[tts_router] [Tier 1 Priority] Invoking Colab ({colab_engine}, voice={voice}, speed={args.speed})...")
+        cmd = [colab_bin, "--text", text, "-o", str(out_p), "--engine", colab_engine, "--speed", str(args.speed)]
+        if colab_engine == "voxcpm" and args.voice:
+            cmd.extend(["--voice-design", args.voice])
+        else:
+            cmd.extend(["--voice", voice])
+        if args.ref_audio:
+            cmd.extend(["--ref-audio", args.ref_audio])
         if args.with_timestamps:
             cmd.append("--with-timestamps")
         try:
-            res = subprocess.run(cmd, timeout=180)
+            res = subprocess.run(cmd, timeout=300)
             if res.returncode == 0 and out_p.exists() and out_p.stat().st_size > 0:
                 print(f"[tts_router] ✅ Colab voice generation succeeded -> {out_p}")
                 return 0
@@ -72,8 +80,8 @@ def main() -> int:
         except Exception as e:
             print(f"[tts_router] ⚠️ Colab voice failed or timed out: {e}")
 
-        if args.engine == "colab":
-            print("[tts_router] ❌ Engine locked to colab and generation failed.", file=sys.stderr)
+        if args.engine != "auto":
+            print(f"[tts_router] ❌ Engine locked to {args.engine} and generation failed.", file=sys.stderr)
             return 1
 
     # Route 2: Free Local Offline Piper Fallback (Instant, 0 GPU, 0 network, 0 cost)

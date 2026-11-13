@@ -10,15 +10,21 @@ Upgraded Top-Tier Open-Source Multimodal Stack for Google Colab (L4 / A100 / T4)
      - Secondary Engine (`flux-schnell`): `unsloth/FLUX.1-schnell` (12B MMDiT, Apache 2.0, ungated)
        for 4-step Western commercial photography & cinematic lighting.
      - Lightweight Fallback (`sdxl-turbo`): `stabilityai/sdxl-turbo` (`guidance_scale=0.0`).
-  2. Voice, Speech Cloning & Audio Mastering:
-     - Studio Documentary & Podcast Narrator (`kokoro`): `hexgrad/Kokoro-82M` (StyleTTS2 + ISTFTNet,
+  2. Voice, Speech Cloning & Audio Mastering (The "Golden 4-Tier" Audio Fleet):
+     - Tier 1 Studio Documentary & Podcast Narrator (`kokoro`): `hexgrad/Kokoro-82M` (StyleTTS2 + ISTFTNet,
        Apache 2.0). #1 Open-Weight TTS Arena model with 8 native Mandarin studio voices
        (`zm_yunjian`, `zm_yunxi`, `zm_yunyang`, `zm_yunxia`, `zf_xiaoxiao`, `zf_xiaobei`,
        `zf_xiaoni`, `zf_xiaoyi`) and 20+ English studio voices (`af_heart`, `am_fenrir`, `am_michael`).
-     - Zero-Shot Voice Cloning (`f5-tts`): `SWivid/F5-TTS` (`F5TTS_v1_Base`, Flow Matching). Clones
-       any 3-10s reference WAV file (`--ref-audio`) in Mandarin, English, or mixed bilingual speech.
+     - Tier 2 Chinese Pinyin & Emotion-Controllable Explainer (`index-tts`): `IndexTeam/IndexTTS-2.5`
+       (Bilibili, 0.8B GPT + CFM + BigVGAN). Solves polyphone errors with Pinyin syntax (`{重|chong2}构`),
+       supports pause control `[pause:0.5s]`, and timbre-emotion disentanglement (`--emo-audio`, `--emo-text`).
+     - Tier 3 48kHz Broadcast Master & Prompt Voice Design (`voxcpm`): `openbmb/VoxCPM2` (OpenBMB,
+       2B Tokenizer-Free MiniCPM-4 base). Generates native 48kHz studio audio; creates new voices purely
+       via natural language description (`--voice-design`) or high-fidelity cloning.
+     - Tier 4 Zero-Shot Flow Matching Voice Cloning (`f5-tts`): `SWivid/F5-TTS` (`F5TTS_v1_Base`, Flow
+       Matching). Clones any 3-10s reference WAV file (`--ref-audio`) in Mandarin, English, or mixed speech.
      - Mandatory Broadcast Audio Mastering: 30ms Anti-Pop fade (`afade`) + EBU R128 `-14.0 LUFS`
-       loudness normalization (`loudnorm=I=-14:TP=-1.5:LRA=11`) + `44.1kHz` 16-bit PCM WAV.
+       loudness normalization (`loudnorm=I=-14:TP=-1.5:LRA=11`) + `48kHz` (VoxCPM) / `44.1kHz` 16-bit PCM WAV.
   3. Millisecond Word-Level Timestamp ASR (`faster-whisper-turbo`):
      - `mobiuslabsgmbh/faster-whisper-large-v3-turbo` (6x faster than large-v3, float16 on CUDA)
        for driving OpenFilm dynamic subtitles and kinetic flash typography.
@@ -85,7 +91,7 @@ def setup_model_vault(use_drive_cache: bool = True):
         print(f"🏦 [Model Vault] Mounted 5TB Google Drive Model Vault: {vault_cache}", flush=True)
 
 
-def ensure_dependencies(need_f5: bool = False):
+def ensure_dependencies(need_f5: bool = False, need_voxcpm: bool = False, need_indextts: bool = False):
     """Install required top-tier multimodal packages on the remote Colab VM (Python 3.10-3.13 safe)."""
     missing_core = False
     try:
@@ -142,6 +148,36 @@ def ensure_dependencies(need_f5: bool = False):
                 check=True,
             )
 
+    if need_voxcpm:
+        try:
+            import voxcpm  # noqa: F401
+        except ImportError:
+            print("⏳ [Colab Worker] Installing VoxCPM2 runtime (OpenBMB 2B 48kHz)...", flush=True)
+            subprocess.run(
+                [sys.executable, "-m", "pip", "install", "-q", "voxcpm", "soundfile"],
+                check=False,
+            )
+
+    if need_indextts:
+        try:
+            import indextts  # noqa: F401
+        except ImportError:
+            print("⏳ [Colab Worker] Installing IndexTTS-2.5 runtime (Bilibili 0.8B GPT+CFM)...", flush=True)
+            subprocess.run(
+                [
+                    sys.executable, "-m", "pip", "install", "-q",
+                    "huggingface_hub", "soundfile", "bigvgan", "torchaudio",
+                ],
+                check=False,
+            )
+            res = subprocess.run([sys.executable, "-m", "pip", "install", "-q", "indextts"], check=False)
+            if res.returncode != 0:
+                subprocess.run(
+                    [sys.executable, "-m", "pip", "install", "-q", "git+https://github.com/index-tts/index-tts.git"],
+                    check=False,
+                )
+
+
 
 def locate_content_root() -> Path:
     """Locate the mounted Google Drive `内容生产` root or fallback to `/content/youai_work`."""
@@ -187,6 +223,8 @@ class MultimodalEngine:
         self.image_model_type = None
         self.kokoro_pipes = {}
         self.f5_tts_model = None
+        self.voxcpm_model = None
+        self.indextts_model = None
         print(
             f"🖥️ [Engine] Device: {self.gpu_name} ({self.device}, VRAM: {self.vram_gb:.2f} GiB)",
             flush=True,
@@ -387,6 +425,9 @@ class MultimodalEngine:
         speed: float = 1.0,
         voice: str = "zm_yunjian",
         engine: str = "auto",
+        voice_design: str = "",
+        emo_audio: str = None,
+        emo_text: str = "",
         with_timestamps: bool = False,
     ) -> str:
         import numpy as np
@@ -396,6 +437,7 @@ class MultimodalEngine:
         out_p.parent.mkdir(parents=True, exist_ok=True)
         raw_wav = str(out_p.with_suffix(".raw.wav"))
         used_engine = None
+        target_sample_rate = 44100
 
         # Normalize legacy edge-tts voice names to Kokoro studio voice IDs
         norm_voice = VOICE_ALIAS_MAP.get(voice.lower(), voice)
@@ -408,8 +450,107 @@ class MultimodalEngine:
         ):
             norm_voice = "zm_yunjian" if contains_chinese(text) else "af_heart"
 
-        # 1. Zero-Shot Voice Cloning via F5-TTS (when ref_audio exists or engine == "f5-tts")
-        if (ref_audio and Path(ref_audio).exists()) or engine == "f5-tts":
+        def get_studio_ref_anchor():
+            prompt_wav = str(out_p.with_suffix(".prompt_ref.wav"))
+            if not os.path.exists(prompt_wav):
+                pipe = self._get_kokoro_pipe("z")
+                prompt_text = "欢迎来到云端视频生产工厂，算力即生产力，每一帧都是工业级母带。"
+                chunks = [audio for _, _, audio in pipe(prompt_text, voice=norm_voice, speed=1.0) if audio is not None]
+                sf.write(prompt_wav, np.concatenate(chunks), 24000)
+            return prompt_wav
+
+        # 1. Bilibili IndexTTS-2.5 (Pinyin pronunciation control & Disentangled Emotion)
+        if engine in ("index-tts", "indextts", "index-tts-2.5") or (
+            engine == "auto" and (emo_audio or emo_text or (ref_audio and re.search(r'[{|}]|[A-Z]{2,}\d|\[pause:', text)))
+        ):
+            try:
+                ensure_dependencies(need_indextts=True)
+                drive_vault = Path("/content/drive/MyDrive/AIStudio_Models/IndexTTS-2.5")
+                local_model_dir = Path("/content/IndexTTS-2.5")
+                model_dir = None
+                for candidate in [drive_vault, local_model_dir]:
+                    if (candidate / "config.yaml").exists():
+                        model_dir = candidate
+                        break
+                if model_dir is None:
+                    print("📥 [IndexTTS-2.5] Downloading model weights from IndexTeam/IndexTTS-2.5...", flush=True)
+                    target_dir = drive_vault if Path("/content/drive/MyDrive").exists() else local_model_dir
+                    from huggingface_hub import snapshot_download
+                    snapshot_download(repo_id="IndexTeam/IndexTTS-2.5", local_dir=str(target_dir))
+                    model_dir = target_dir
+
+                if self.indextts_model is None:
+                    print(f"🗣️ [IndexTTS-2.5] Initializing Bilibili 0.8B GPT+CFM engine from {model_dir}...", flush=True)
+                    try:
+                        from indextts.infer_v2 import IndexTTS2
+                    except ImportError:
+                        from indextts.infer_v2_5 import IndexTTS2
+                    self.indextts_model = IndexTTS2(
+                        cfg_path=str(model_dir / "config.yaml"),
+                        model_dir=str(model_dir),
+                        use_fp16=True if self.device == "cuda" else False,
+                    )
+
+                actual_ref = ref_audio if (ref_audio and Path(ref_audio).exists()) else get_studio_ref_anchor()
+                t0 = time.time()
+                infer_kwargs = {
+                    "spk_audio_prompt": str(actual_ref),
+                    "text": text,
+                    "output_path": raw_wav,
+                    "speed": float(speed),
+                    "verbose": True,
+                }
+                if emo_audio and Path(emo_audio).exists():
+                    infer_kwargs["emo_audio_prompt"] = str(emo_audio)
+                if emo_text:
+                    infer_kwargs["emo_text"] = emo_text
+                    infer_kwargs["use_emo_text"] = True
+
+                self.indextts_model.infer(**infer_kwargs)
+                print(f"✅ [IndexTTS-2.5] Synthesized emotion/pinyin controlled speech in {time.time()-t0:.2f}s", flush=True)
+                used_engine = "index-tts-2.5"
+            except Exception as e:
+                print(f"⚠️ [IndexTTS-2.5] Fallback due to error ({e})", flush=True)
+
+        # 2. OpenBMB VoxCPM2 (2B Tokenizer-Free 48kHz & Prompt Voice Design)
+        if not used_engine and (
+            engine in ("voxcpm", "voxcpm2") or (
+                engine == "auto" and (voice_design or (text.startswith("(") and ")" in text[:120]))
+            )
+        ):
+            try:
+                ensure_dependencies(need_voxcpm=True)
+                from voxcpm import VoxCPM
+                if self.voxcpm_model is None:
+                    print("🗣️ [VoxCPM2] Loading OpenBMB/VoxCPM2 (2B Tokenizer-Free 48kHz)...", flush=True)
+                    self.voxcpm_model = VoxCPM.from_pretrained("openbmb/VoxCPM2", load_denoiser=False)
+
+                synth_text = text
+                if voice_design and not text.startswith("("):
+                    synth_text = f"({voice_design}){text}"
+
+                t0 = time.time()
+                gen_kwargs = {
+                    "text": synth_text,
+                    "cfg_value": 2.0,
+                    "inference_timesteps": 10,
+                }
+                if ref_audio and Path(ref_audio).exists():
+                    gen_kwargs["reference_wav_path"] = str(ref_audio)
+                    if ref_text:
+                        gen_kwargs["prompt_text"] = ref_text
+
+                wav = self.voxcpm_model.generate(**gen_kwargs)
+                out_sr = getattr(self.voxcpm_model, "sample_rate", 48000)
+                sf.write(raw_wav, wav, out_sr)
+                target_sample_rate = 48000
+                print(f"✅ [VoxCPM2] Synthesized 48kHz studio audio in {time.time()-t0:.2f}s", flush=True)
+                used_engine = "voxcpm2"
+            except Exception as e:
+                print(f"⚠️ [VoxCPM2] Fallback due to error ({e})", flush=True)
+
+        # 3. Zero-Shot Voice Cloning via F5-TTS (when ref_audio exists or engine == "f5-tts")
+        if not used_engine and ((ref_audio and Path(ref_audio).exists()) or engine == "f5-tts"):
             try:
                 ensure_dependencies(need_f5=True)
                 from f5_tts.api import F5TTS
@@ -417,16 +558,8 @@ class MultimodalEngine:
                     print("🗣️ [F5-TTS] Loading SWivid/F5-TTS zero-shot voice cloning engine...", flush=True)
                     self.f5_tts_model = F5TTS(device=self.device)
 
-                # If user forced f5-tts without ref_audio, synthesize a clean 5s studio prompt via Kokoro first
-                actual_ref = ref_audio
-                actual_ref_text = ref_text or ""
-                if not actual_ref or not Path(actual_ref).exists():
-                    prompt_wav = str(out_p.with_suffix(".prompt_ref.wav"))
-                    actual_ref_text = "欢迎来到云端视频生产工厂，算力即生产力，每一帧都是工业级母带。"
-                    pipe = self._get_kokoro_pipe("z")
-                    chunks = [audio for _, _, audio in pipe(actual_ref_text, voice=norm_voice, speed=1.0) if audio is not None]
-                    sf.write(prompt_wav, np.concatenate(chunks), 24000)
-                    actual_ref = prompt_wav
+                actual_ref = ref_audio if (ref_audio and Path(ref_audio).exists()) else get_studio_ref_anchor()
+                actual_ref_text = ref_text or "欢迎来到云端视频生产工厂，算力即生产力，每一帧都是工业级母带。"
 
                 t0 = time.time()
                 self.f5_tts_model.infer(
@@ -441,7 +574,7 @@ class MultimodalEngine:
             except Exception as e:
                 print(f"⚠️ [F5-TTS] Fallback to Kokoro-82M studio TTS ({e})", flush=True)
 
-        # 2. Studio Documentary & Podcast Narrator via Kokoro-82M (Apache 2.0)
+        # 4. Studio Documentary & Podcast Narrator via Kokoro-82M (Apache 2.0)
         if not used_engine and engine in ("auto", "kokoro", "kokoro-82m"):
             try:
                 lang_code = "z" if (contains_chinese(text) or norm_voice.startswith("z")) else (
@@ -451,7 +584,6 @@ class MultimodalEngine:
                 t0 = time.time()
                 audio_chunks = []
                 # Split text into sentence clauses to prevent 510-token truncation in misaki/kokoro
-                import re
                 parts = [p.strip() for p in re.split(r'([。！？\n]+)', text) if p.strip()]
                 sentences = []
                 curr = ""
@@ -483,7 +615,7 @@ class MultimodalEngine:
             except Exception as e:
                 print(f"⚠️ [Kokoro-82M] Fallback to neural edge-tts ({e})", flush=True)
 
-        # 3. Emergency fallback to edge-tts
+        # 5. Emergency fallback to edge-tts
         if not used_engine:
             raw_mp3 = str(out_p.with_suffix(".raw.mp3"))
             edge_voice = voice if "Neural" in voice else (
@@ -505,7 +637,7 @@ class MultimodalEngine:
             used_engine = f"edge-tts:{edge_voice}"
 
         # Mandatory Broadcast Audio Mastering:
-        # 30ms Anti-Pop fade-in/out + EBU R128 -14.0 LUFS normalization + 44.1kHz 16-bit PCM WAV
+        # 30ms Anti-Pop fade-in/out + EBU R128 -14.0 LUFS normalization + 48kHz (VoxCPM) / 44.1kHz 16-bit PCM WAV
         af_chain = (
             "afade=t=in:st=0:d=0.03,"
             "areverse,afade=t=in:st=0:d=0.03,areverse,"
@@ -515,7 +647,7 @@ class MultimodalEngine:
             [
                 "ffmpeg", "-y", "-i", raw_wav,
                 "-af", af_chain,
-                "-ar", "44100", "-ac", "1", "-c:a", "pcm_s16le",
+                "-ar", str(target_sample_rate), "-ac", "1", "-c:a", "pcm_s16le",
                 str(out_p),
             ],
             check=True,
@@ -529,7 +661,7 @@ class MultimodalEngine:
             except OSError:
                 pass
 
-        print(f"✅ [TTS:{used_engine}] Mastered -14 LUFS anti-pop PCM WAV -> {out_p}", flush=True)
+        print(f"✅ [TTS:{used_engine}] Mastered -14 LUFS anti-pop PCM WAV ({target_sample_rate}Hz) -> {out_p}", flush=True)
 
         if with_timestamps:
             ts_path = str(out_p.with_suffix(".words.json"))
@@ -571,6 +703,9 @@ def execute_manifest(engine: MultimodalEngine, manifest_path: Path, drive_projec
             ref = params.get("ref_audio")
             if ref and not Path(ref).is_absolute():
                 ref = str(base_dir / ref)
+            emo_ref = params.get("emo_audio")
+            if emo_ref and not Path(emo_ref).is_absolute():
+                emo_ref = str(base_dir / emo_ref)
             engine.generate_tts(
                 params["text"],
                 out_abs,
@@ -579,6 +714,9 @@ def execute_manifest(engine: MultimodalEngine, manifest_path: Path, drive_projec
                 speed=params.get("speed", 1.0),
                 voice=params.get("voice", "zm_yunjian"),
                 engine=params.get("engine", "auto"),
+                voice_design=params.get("voice_design", ""),
+                emo_audio=emo_ref,
+                emo_text=params.get("emo_text", ""),
                 with_timestamps=params.get("with_timestamps", True),
             )
         elif t_type == "text_to_image":
@@ -618,9 +756,12 @@ def main():
     parser.add_argument("--steps", type=int, default=None, help="Inference steps override")
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
     parser.add_argument("--voice", default="zm_yunjian", help="TTS voice ID (e.g., zm_yunjian, zm_yunxi, zf_xiaoxiao, af_heart)")
-    parser.add_argument("--engine", default="auto", help="TTS engine: auto | kokoro | f5-tts")
-    parser.add_argument("--ref-audio", help="Reference WAV path for F5-TTS zero-shot voice cloning")
+    parser.add_argument("--engine", default="auto", help="TTS engine: auto | kokoro | f5-tts | index-tts | voxcpm")
+    parser.add_argument("--ref-audio", help="Reference WAV path for zero-shot voice cloning")
     parser.add_argument("--ref-text", default="", help="Optional transcript of reference WAV")
+    parser.add_argument("--voice-design", default="", help="Natural language voice description for VoxCPM2")
+    parser.add_argument("--emo-audio", help="Emotion reference WAV path for IndexTTS-2.5")
+    parser.add_argument("--emo-text", default="", help="Emotion description text for IndexTTS-2.5")
     parser.add_argument("--speed", type=float, default=1.0, help="Speech speed multiplier")
     parser.add_argument("--with-timestamps", action="store_true", help="Also emit .words.json via Faster-Whisper-Turbo")
     parser.add_argument("--audio-input", help="Input audio file for standalone ASR task")
@@ -632,7 +773,9 @@ def main():
         write_status(args.status_file, "initializing", "Setting up Model Vault & dependencies...")
         setup_model_vault(use_drive_cache=not args.no_drive_cache)
         need_f5 = bool(args.ref_audio or args.engine == "f5-tts")
-        ensure_dependencies(need_f5=need_f5)
+        need_voxcpm = bool(args.engine in ("voxcpm", "voxcpm2") or args.voice_design)
+        need_indextts = bool(args.engine in ("index-tts", "indextts", "index-tts-2.5") or args.emo_audio or args.emo_text)
+        ensure_dependencies(need_f5=need_f5, need_voxcpm=need_voxcpm, need_indextts=need_indextts)
         engine = MultimodalEngine()
 
         if args.task == "image":
@@ -658,6 +801,9 @@ def main():
                 speed=args.speed,
                 voice=args.voice,
                 engine=args.engine,
+                voice_design=args.voice_design,
+                emo_audio=args.emo_audio,
+                emo_text=args.emo_text,
                 with_timestamps=args.with_timestamps,
             )
             extra = {"output": out}

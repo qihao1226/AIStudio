@@ -1,0 +1,68 @@
+#!/usr/bin/env python3
+"""
+colab_index_tts - Bilibili IndexTTS-2.5 Dedicated Colab Voice CLI
+================================================================
+Runs Bilibili IndexTTS-2.5 (0.8B GPT + CFM + BigVGAN) on Google Colab GPU (L4 / A100).
+Key Superpowers:
+  1. Polyphone & Pinyin Accuracy: Uses `{字|pinyin}` e.g. `{重|chong2}构` or uppercase pinyin `CHONG2`
+  2. Millisecond Pause Control: Insert `[pause:0.5s]` anywhere in the text
+  3. Disentangled Emotion Control: Separate speaker voice (`--ref-audio`) from emotion (`--emo-audio` / `--emo-text`)
+  4. Real-time compute unit (CU) metering via ColabMeter
+
+Usage:
+  colab_index_tts --text "必须对架构进行{重|chong2}构，[pause:0.4s]才能实现工业级吞吐。" -o ./output.wav
+  colab_index_tts --text "这是一个具有强烈激昂情绪的科技发布会开场白！" --emo-text "激昂振奋、坚定有力" -o ./speech.wav
+"""
+
+import sys
+import argparse
+import subprocess
+from pathlib import Path
+
+COLAB_VOICE_GEN = Path(__file__).resolve().parent / "colab_voice_gen"
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Bilibili IndexTTS-2.5 Dedicated CLI: Chinese Pinyin Control, Pause Injection & Emotion Disentanglement"
+    )
+    parser.add_argument("--text", required=True, help="Text to speak (supports {字|pinyin} annotations and [pause:Xs] markers)")
+    parser.add_argument("--output", "-o", required=True, help="Output WAV path")
+    parser.add_argument("--ref-audio", help="Optional reference speaker WAV (if omitted, high-quality studio anchor voice is used)")
+    parser.add_argument("--ref-text", default="", help="Optional transcript of reference WAV")
+    parser.add_argument("--emo-audio", help="Optional emotion style reference WAV file")
+    parser.add_argument("--emo-text", default="", help="Optional emotion description text (e.g. '激昂振奋、从容沉稳')")
+    parser.add_argument("--speed", type=float, default=1.0, help="Speaking speed multiplier (default: 1.0)")
+    parser.add_argument("--with-timestamps", action="store_true", help="Generate Faster-Whisper-Turbo millisecond word timestamps (.words.json)")
+    parser.add_argument("--session", default="youai-mm-l4", help="Colab session name")
+    parser.add_argument("--gpu", default="L4", choices=["L4", "A100", "T4"], help="Colab GPU tier")
+    parser.add_argument("--mount-drive", action="store_true", help="Mount 5TB Google Drive Model Vault before running")
+    args = parser.parse_args()
+
+    cmd = [
+        sys.executable, str(COLAB_VOICE_GEN),
+        "--text", args.text,
+        "--output", args.output,
+        "--engine", "index-tts",
+        "--speed", str(args.speed),
+        "--session", args.session,
+        "--gpu", args.gpu,
+    ]
+    if args.ref_audio:
+        cmd.extend(["--ref-audio", args.ref_audio])
+    if args.ref_text:
+        cmd.extend(["--ref-text", args.ref_text])
+    if args.emo_audio:
+        cmd.extend(["--emo-audio", args.emo_audio])
+    if args.emo_text:
+        cmd.extend(["--emo-text", args.emo_text])
+    if args.with_timestamps:
+        cmd.append("--with-timestamps")
+    if args.mount_drive:
+        cmd.append("--mount-drive")
+
+    sys.exit(subprocess.run(cmd).returncode)
+
+
+if __name__ == "__main__":
+    main()

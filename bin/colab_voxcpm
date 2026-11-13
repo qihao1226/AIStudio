@@ -1,0 +1,67 @@
+#!/usr/bin/env python3
+"""
+colab_voxcpm - OpenBMB VoxCPM2 Dedicated Colab Voice CLI
+========================================================
+Runs OpenBMB VoxCPM2 (2B Tokenizer-Free MiniCPM-4 base) on Google Colab GPU (L4 / A100).
+Key Superpowers:
+  1. Native 48kHz Broadcast Master Audio: High-fidelity studio sound.
+  2. Prompt-Driven Voice Design: Generate custom voices purely via natural language description (`--voice-design`)!
+  3. Controllable Voice Cloning: Accurate zero-shot cloning from reference audio (`--ref-audio`).
+  4. Real-time compute unit (CU) metering via ColabMeter.
+
+Usage:
+  # 1. Prompt Voice Design (No reference audio needed!)
+  colab_voxcpm --text "欢迎收看本期科技深度前沿，我是您的智能解说员。" --voice-design "沉稳、富有磁性的35岁科技纪录片男声" -o ./master_48k.wav
+
+  # 2. Controllable Voice Cloning
+  colab_voxcpm --text "这是基于样本克隆的高保真 48kHz 语音。" --ref-audio ./speaker.wav -o ./cloned_48k.wav
+"""
+
+import sys
+import argparse
+import subprocess
+from pathlib import Path
+
+COLAB_VOICE_GEN = Path(__file__).resolve().parent / "colab_voice_gen"
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="OpenBMB VoxCPM2 Dedicated CLI: Native 48kHz Broadcast Studio Audio & Prompt Voice Design"
+    )
+    parser.add_argument("--text", required=True, help="Text to speak")
+    parser.add_argument("--output", "-o", required=True, help="Output WAV path (.wav)")
+    parser.add_argument("--voice-design", default="沉稳磁性的专业科技纪录片男声", help="Natural language voice description prompt (e.g. '知性干练的科技女声')")
+    parser.add_argument("--ref-audio", help="Optional reference speaker WAV for zero-shot voice cloning")
+    parser.add_argument("--ref-text", default="", help="Optional transcript of reference WAV")
+    parser.add_argument("--speed", type=float, default=1.0, help="Speaking speed multiplier (default: 1.0)")
+    parser.add_argument("--with-timestamps", action="store_true", help="Generate Faster-Whisper-Turbo millisecond word timestamps (.words.json)")
+    parser.add_argument("--session", default="youai-mm-l4", help="Colab session name")
+    parser.add_argument("--gpu", default="L4", choices=["L4", "A100", "T4"], help="Colab GPU tier")
+    parser.add_argument("--mount-drive", action="store_true", help="Mount 5TB Google Drive Model Vault before running")
+    args = parser.parse_args()
+
+    cmd = [
+        sys.executable, str(COLAB_VOICE_GEN),
+        "--text", args.text,
+        "--output", args.output,
+        "--engine", "voxcpm",
+        "--voice-design", args.voice_design,
+        "--speed", str(args.speed),
+        "--session", args.session,
+        "--gpu", args.gpu,
+    ]
+    if args.ref_audio:
+        cmd.extend(["--ref-audio", args.ref_audio])
+    if args.ref_text:
+        cmd.extend(["--ref-text", args.ref_text])
+    if args.with_timestamps:
+        cmd.append("--with-timestamps")
+    if args.mount_drive:
+        cmd.append("--mount-drive")
+
+    sys.exit(subprocess.run(cmd).returncode)
+
+
+if __name__ == "__main__":
+    main()

@@ -2,19 +2,34 @@
 """
 colab_voice_gen - YOUAI Cloud Video Factory Top-Tier Colab Voice & Cloning CLI
 ==============================================================================
-Synthesizes broadcast-grade (-14.0 LUFS, 44.1kHz PCM WAV) Mandarin & English
-narration OR Zero-Shot Voice Cloning on Google Colab GPU (L4 / A100 / T4),
+Synthesizes broadcast-grade (-14.0 LUFS, 48kHz / 44.1kHz PCM WAV) Mandarin & English
+narration, Voice Design, or Zero-Shot Voice Cloning on Google Colab GPU (L4 / A100 / T4),
 with optional millisecond word-level timestamp extraction via Faster-Whisper-Turbo:
   - `kokoro` (Default Studio Narrator): hexgrad/Kokoro-82M (Apache 2.0)
       Mandarin voices: zm_yunjian (纪录片浑厚男声), zm_yunxi (活力叙事男声),
                        zm_yunyang (专业播音男声), zf_xiaoxiao (旗舰播客女声),
                        zf_xiaobei (知性科技女声), zf_xiaoni, zf_xiaoyi, zm_yunxia
       English voices:  af_heart, af_bella, am_fenrir, am_michael, bm_george
+  - `index-tts` (Pinyin & Emotion Controllable Explainer): IndexTeam/IndexTTS-2.5 (Bilibili)
+      0.8B GPT + CFM + BigVGAN. Solves Chinese polyphone errors (`{重|chong2}构`),
+      pause control `[pause:0.5s]`, and timbre-emotion disentanglement (`--emo-audio`, `--emo-text`).
+  - `voxcpm` (48kHz Studio Master & Prompt Voice Design): openbmb/VoxCPM2 (OpenBMB)
+      2B Tokenizer-Free MiniCPM-4 base, native 48kHz audio. Create custom voices from
+      natural-language descriptions (`--voice-design`) without any reference audio!
   - `f5-tts` (Zero-Shot Voice Cloning): SWivid/F5-TTS (Flow Matching)
       Clones any 3-10s reference WAV file (`--ref-audio`) in Mandarin/English!
 
 Usage:
+  # 1. Studio Narrator (Kokoro-82M)
   colab_voice_gen --text "欢迎来到云端视频生产工厂，算力即生产力。" --voice zm_yunjian --with-timestamps --output /path/to/narration.wav
+
+  # 2. Pinyin & Pause Precision Control (IndexTTS-2.5)
+  colab_voice_gen --text "必须对架构进行{重|chong2}构，[pause:0.4s]才能实现飞跃。" --engine index-tts --output /path/to/pinyin_fixed.wav
+
+  # 3. Prompt Voice Design 48kHz (VoxCPM2)
+  colab_voice_gen --text "欢迎收看本期科技深度前沿。" --engine voxcpm --voice-design "沉稳磁性的深度科技纪录片男声" --output /path/to/master_48k.wav
+
+  # 4. Zero-Shot Voice Cloning (F5-TTS)
   colab_voice_gen --text "这是用五秒参考音频零样本克隆出的专属数字分身配音。" --engine f5-tts --ref-audio /path/to/ref.wav --output /path/to/cloned.wav
 """
 
@@ -59,13 +74,16 @@ def ensure_session(session_name: str, gpu: str) -> None:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Top-Tier Open-Source Colab Voice, Cloning & ASR CLI (Kokoro-82M / F5-TTS / Faster-Whisper-Turbo)")
+    parser = argparse.ArgumentParser(description="Top-Tier Open-Source Colab Voice Suite (Kokoro-82M / IndexTTS-2.5 / VoxCPM2 / F5-TTS / Faster-Whisper-Turbo)")
     parser.add_argument("--text", required=True, help="Text to synthesize (Mandarin, English, or bilingual)")
     parser.add_argument("--output", required=True, help="Local output WAV path (.wav)")
     parser.add_argument("--voice", default="zm_yunjian", help="Studio voice ID (e.g., zm_yunjian, zm_yunxi, zf_xiaoxiao, zf_xiaobei, af_heart)")
-    parser.add_argument("--engine", default="auto", choices=["auto", "kokoro", "f5-tts"], help="TTS engine (default: auto -> f5-tts if --ref-audio given, else kokoro)")
-    parser.add_argument("--ref-audio", help="Local reference WAV file (3-10s) for F5-TTS zero-shot voice cloning")
+    parser.add_argument("--engine", default="auto", choices=["auto", "kokoro", "f5-tts", "index-tts", "voxcpm"], help="TTS engine")
+    parser.add_argument("--ref-audio", help="Local reference WAV file (3-10s) for zero-shot voice cloning")
     parser.add_argument("--ref-text", default="", help="Optional transcript of the reference audio")
+    parser.add_argument("--voice-design", default="", help="Natural language voice description prompt for VoxCPM2 (e.g. '沉稳的中年科技解说员，带有磁性')")
+    parser.add_argument("--emo-audio", help="Local emotion reference WAV file for IndexTTS-2.5 emotion disentanglement")
+    parser.add_argument("--emo-text", default="", help="Emotion description text for IndexTTS-2.5 (e.g. '激昂振奋')")
     parser.add_argument("--speed", type=float, default=1.0, help="Speech speed multiplier (default: 1.0)")
     parser.add_argument("--with-timestamps", action="store_true", help="Also run Faster-Whisper-Turbo to download .words.json word-level timestamps")
     parser.add_argument("--session", default="youai-mm-l4", help="Colab session name")
@@ -77,8 +95,9 @@ def main():
     if args.mount_drive:
         run_cmd([COLAB_BIN, "drivemount", "-s", args.session], check=False)
 
+    task_desc = args.voice_design or args.voice or (Path(args.ref_audio).stem if args.ref_audio else 'studio')
     meter = ColabMeter(
-        task_name=f"Voice-Gen ({args.engine} {args.voice or 'ref'})",
+        task_name=f"Voice-Gen ({args.engine} {task_desc})",
         gpu=args.gpu,
         session=args.session,
     ).start()
@@ -103,6 +122,15 @@ def main():
             print(f"📤 [colab_voice_gen] Uploading reference audio -> {remote_ref}", flush=True)
             run_cmd([COLAB_BIN, "upload", "-s", args.session, str(ref_p), remote_ref], check=True)
 
+        remote_emo = None
+        if args.emo_audio:
+            emo_p = Path(args.emo_audio).resolve()
+            if not emo_p.exists():
+                raise FileNotFoundError(f"Emotion reference audio not found: {emo_p}")
+            remote_emo = f"/content/youai_emo_{job_id}{emo_p.suffix}"
+            print(f"📤 [colab_voice_gen] Uploading emotion audio -> {remote_emo}", flush=True)
+            run_cmd([COLAB_BIN, "upload", "-s", args.session, str(emo_p), remote_emo], check=True)
+
         cmd_args = [
             "python3", remote_worker,
             "--task", "tts",
@@ -117,6 +145,12 @@ def main():
             cmd_args.extend(["--ref-audio", remote_ref])
         if args.ref_text:
             cmd_args.extend(["--ref-text", args.ref_text])
+        if args.voice_design:
+            cmd_args.extend(["--voice-design", args.voice_design])
+        if remote_emo:
+            cmd_args.extend(["--emo-audio", remote_emo])
+        if args.emo_text:
+            cmd_args.extend(["--emo-text", args.emo_text])
         if args.with_timestamps:
             cmd_args.append("--with-timestamps")
 
