@@ -98,4 +98,5 @@ python3 scripts/grok_trigger_antigravity.py \
 | `403 storageQuotaExceeded` | Service Account 无存储配额，只能写 Workspace 共享云端硬盘 | 改用 OAuth（见 §2①） |
 | 上传到文件夹返回 `404 File not found` | `drive.file` 只覆盖「本应用创建的文件」，个别父文件夹不可写 | 脚本已自动回落到应用自建目录（默认 `YOUAI产出`，`GDRIVE_FALLBACK_FOLDER` 可改）。实测向既有文件夹 `1bnZ8YCe...` 写入正常，这条仅作兜底 |
 | `CERTIFICATE_VERIFY_FAILED`（macOS 框架版 Python） | 框架版 Python 不自带根证书，`urllib` 直连 Google 失败 | `export SSL_CERT_FILE=~/Library/Python/3.13/lib/python/site-packages/certifi/cacert.pem` |
+| 沙箱里 `httplib2` 连不上 Google | 沙箱出网走 `HTTPS_PROXY`，`httplib2` 需要 `pysocks` 才能过代理 | 上传前 `pip install google-api-python-client google-auth pysocks` |
 | `invalid_grant` 刷新失败 | refresh token 被撤销 / 过期，或换了 OAuth 客户端 | 重跑 `scripts/gdrive_oauth_login.py` |
