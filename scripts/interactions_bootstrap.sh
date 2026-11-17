@@ -20,10 +20,10 @@ if command -v uv >/dev/null 2>&1; then
     if ! command -v colab >/dev/null 2>&1 && [ ! -x "${HOME}/.local/bin/colab" ]; then
         uv tool install google-colab-cli
     fi
-    uv pip install --system google-api-python-client google-auth requests 2>/dev/null || \
-        python3 -m pip install --quiet --user google-api-python-client google-auth requests
+    uv pip install --system google-api-python-client google-auth pysocks requests 2>/dev/null || \
+        python3 -m pip install --quiet --user google-api-python-client google-auth pysocks requests
 else
-    python3 -m pip install --quiet --user google-colab-cli google-api-python-client google-auth requests
+    python3 -m pip install --quiet --user google-colab-cli google-api-python-client google-auth pysocks requests
 fi
 
 export PATH="${HOME}/.local/bin:${PATH}"
