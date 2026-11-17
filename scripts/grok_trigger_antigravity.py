@@ -43,12 +43,19 @@ def build_agent_instruction(
     feishu_webhook: str,
 ) -> str:
     """Builds the structured instruction sent to the Interactions API sandbox."""
-    feishu_line = (
-        f'- 完成后请使用 `python3 scripts/feishu_notify.py --webhook "{feishu_webhook}" '
-        f'--title "{title}" --status success --drive-url "<DRIVE_URL>"` 发送飞书回执。'
-        if feishu_webhook
-        else "- 如果环境变量中配置了 `FEISHU_WEBHOOK_URL`，完成后请运行 `scripts/feishu_notify.py` 发送飞书回执。"
-    )
+    if feishu_webhook:
+        notify_step = (
+            f'- 完成后请使用 `python3 scripts/feishu_notify.py --webhook "{feishu_webhook}" '
+            f'--title "{title}" --status success --drive-url "<DRIVE_URL>"` 发送飞书回执。\n'
+            f'   - 若中途失败，也请调用 `scripts/feishu_notify.py --status error --summary "<失败原因>"` 通知用户。'
+        )
+    else:
+        notify_step = (
+            "- 完成后请在最终回复中清晰输出以下结构化结果（供 Hermes/Grok 通过飞书私聊回传用户）：\n"
+            "     - `STATUS: success`（失败则为 `STATUS: error`）\n"
+            "     - `DRIVE_URL: <上传后的 Google Drive 链接>`\n"
+            "     - `SUMMARY: <交付物清单与简明摘要>`"
+        )
 
     return f"""你现在处于 Gemini Interactions API 云端生产沙箱中，正在执行来自飞书的自动化内容生产任务。
 
@@ -66,9 +73,8 @@ def build_agent_instruction(
    - 根据需求单与 `docs/sops/` 下对应的 SOP，通过 `colab` CLI 或 `scripts/colab_*_worker.py` 调度 Colab GPU 完成素材生产与装配。
 3. **上传产物到 Google Drive**：
    - 使用 `python3 scripts/gdrive_sa_upload.py --source <产物目录或文件> --folder-id {drive_folder_id}` 上传全部交付物，并记录输出的 Drive 链接。
-4. **发送飞书完成回执**：
-   {feishu_line}
-   - 若中途失败，也请调用 `scripts/feishu_notify.py --status error --summary "<失败原因>"` 通知用户。
+4. **回传结果**：
+   {notify_step}
 """
 
 
