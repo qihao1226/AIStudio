@@ -20,6 +20,8 @@ export PATH="/home/antigravity/.local/bin:/shared/user/.gemini/youai/bin:$PATH"
 - **`AG_SOP_05` 工业口播伴侣动效线**：[`docs/sops/AG_SOP_05_v3.0.md`](docs/sops/AG_SOP_05_v3.0.md)
 - **`AG_SOP_06` 极客架构与概念演示线**：[`docs/sops/AG_SOP_06_v3.0.md`](docs/sops/AG_SOP_06_v3.0.md)
 
+> **端到端运行手册**：[`docs/RUNBOOK_飞书到Colab端到端_v1.md`](docs/RUNBOOK_飞书到Colab端到端_v1.md) —— 飞书需求单 → Antigravity 沙箱 → Colab GPU → Google Drive → 飞书回执，含凭据短时化、验收标准、成本口径与实测记录。
+
 ## 3. 核心工业 CLI 工具集 (`bin/`)
 
 已同步持久化至 `/shared/user/.gemini/youai/bin/` 与 `/home/antigravity/.local/bin/`：
